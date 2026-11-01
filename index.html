@@ -136,8 +136,8 @@ async function joinRoom(){
     const existing=await new Promise((resolve,reject)=>onValue(ref(state.db,"wakiTokiRooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},error=>reject(error),{onlyOnce:true}));
     if(Object.keys(existing).length>=12){throw new Error("इस रूम में अधिकतम 12 सदस्य जुड़ सकते हैं।");}
     const record={id,name,uid:state.uid,speaking:false,cameraOff:false,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};
-    await set(participantRef(id),record);
     await onDisconnect(participantRef(id)).remove();
+    await set(participantRef(id),record);
     state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
     $("joinCard").classList.add("hidden");$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
