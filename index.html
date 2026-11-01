@@ -136,7 +136,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
 <footer class="footer love-footer"><span>Waki Toki <span class="love-heart">♥</span> A little world made with love</span><span>मलाराम ❤️ पूजा के नाम — प्यार और साथ की निशानी</span></footer>
 </div>
 <div class="toast" id="toast"></div>
-<div class="camera-permission-backdrop" id="cameraPermissionModal" role="dialog" aria-modal="true" aria-labelledby="cameraPermissionTitle"><div class="camera-permission-card"><div class="camera-permission-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h2 id="cameraPermissionTitle">कैमरा और माइक्रोफोन की अनुमति ज़रूरी है</h2><p id="cameraPermissionMessage">वीडियो कॉल में शामिल होने के लिए अपने ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।</p><button class="btn" id="cameraPermissionRetry">कैमरा + माइक्रोफोन अनुमति दें / दोबारा कोशिश करें</button><p class="permission-note">अब वीडियो और वॉइस कॉल दोनों उपलब्ध हैं।</p></div></div>
+<div class="camera-permission-backdrop hidden" id="cameraPermissionModal" role="dialog" aria-modal="true" aria-labelledby="cameraPermissionTitle"><div class="camera-permission-card"><div class="camera-permission-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h2 id="cameraPermissionTitle">कैमरा और माइक्रोफोन की अनुमति ज़रूरी है</h2><p id="cameraPermissionMessage">वीडियो कॉल में शामिल होने के लिए अपने ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।</p><button class="btn" id="cameraPermissionRetry">कैमरा + माइक्रोफोन अनुमति दें / दोबारा कोशिश करें</button><p class="permission-note">अब वीडियो और वॉइस कॉल दोनों उपलब्ध हैं।</p></div></div>
 <div class="modal-backdrop" id="configModal"><div class="modal"><h2>एक बार Firebase सेटअप जरूरी है</h2><p>इस ऐप के रूम और लाइव सदस्य सूची को चलाने के लिए Firebase Realtime Database कॉन्फ़िगरेशन चाहिए। <b>firebaseConfig</b> में अपने Firebase Web App की जानकारी डालें और Anonymous Authentication तथा Realtime Database चालू करें। सेटअप निर्देश README में दिए गए हैं।</p><div class="modal-actions"><button class="btn secondary" id="closeConfig">समझ गया</button><button class="btn" id="readmeBtn">README खोलें ↗</button></div></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script type="module">
@@ -205,7 +205,7 @@ function subscribeRoom(){
  state.unsubs.push(onChildRemoved(ref(state.db,base),snap=>removeRemote(snap.key),onCancel));
 }
 async function joinRoom(mode){
- if(mode!=="video"&&mode!=="voice")return;state.mode=mode;$("callModeOptions").classList.add("hidden");$("joinHelp").textContent=mode==="voice"?"वॉइस कॉल चुनी गई है — कैमरा इस्तेमाल नहीं होगा।":"वीडियो कॉल चुनी गई है — कैमरा और माइक्रोफोन इस्तेमाल होंगे।";
+ if(mode!=="video"&&mode!=="voice")return;state.mode=mode;const selectedUrl=new URL(location.href);selectedUrl.searchParams.set("mode",mode);history.replaceState({},"",selectedUrl);$("callModeOptions").classList.add("hidden");$("joinHelp").textContent=mode==="voice"?"वॉइस कॉल चुनी गई है — कैमरा इस्तेमाल नहीं होगा।":"वीडियो कॉल चुनी गई है — कैमरा और माइक्रोफोन इस्तेमाल होंगे।";
  if(state.joinBusy||state.joined)return;
  const incomingRoom=safeRoom(new URLSearchParams(location.search).get("room")||"");
  const room=incomingRoom||("room-"+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,"").slice(0,12):Math.random().toString(36).slice(2,14)));
@@ -255,17 +255,17 @@ async function leaveRoom(){
  if(state.peerId&&state.db)try{await remove(participantRef(state.peerId));}catch(e){}
  if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}
  state.participants.clear();state.peerId="";state.room="";state.cameraOff=false;
- $("joinCard").classList.remove("hidden");$("roomMeta").style.display="none";$("shareTop").disabled=true;
+ $("joinCard").classList.remove("hidden");$("callModeOptions").classList.remove("hidden");$("joinBtn").hidden=true;$("roomMeta").style.display="none";$("shareTop").disabled=true;
  ["cameraBtn","micBtn","leaveBtn"].forEach(id=>$(id).disabled=true);$("micBtn").classList.remove("off");$("micBtn").querySelector("span").textContent="Mic on";
  ["cameraBtn"].forEach(id=>$(id).classList.remove("off"));
  $("cameraBtn").querySelector("span").textContent="Camera";
  setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";render();toast("आप रूम से बाहर आ गए हैं।");
 }
-async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){if(navigator.share){try{await navigator.share({title:"Waki Toki ❤️ Mala & Pooja",text:"मलाराम और पूजा की खास वीडियो कॉल में जुड़ें ❤️",url:url.toString()});}catch(err){if(err.name!=="AbortError")toast("लिंक शेयर नहीं हो सका।");}}else{window.prompt("यह Invite Link कॉपी करें:",url.toString());}}}
+async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);url.searchParams.set("mode",state.mode);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){if(navigator.share){try{await navigator.share({title:"Waki Toki ❤️ Mala & Pooja",text:"मलाराम और पूजा की खास वीडियो कॉल में जुड़ें ❤️",url:url.toString()});}catch(err){if(err.name!=="AbortError")toast("लिंक शेयर नहीं हो सका।");}}else{window.prompt("यह Invite Link कॉपी करें:",url.toString());}}}
 $("videoCallBtn").addEventListener("click",()=>joinRoom("video"));$("voiceCallBtn").addEventListener("click",()=>joinRoom("voice"));$("joinBtn").addEventListener("click",()=>joinRoom(state.mode));$("micBtn").addEventListener("click",toggleMic);$("cameraPermissionRetry").addEventListener("click",()=>{if(!state.joined){joinRoom(state.mode);}});$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("shareTop").addEventListener("click",invite);
 $("closeConfig").addEventListener("click",()=>$("configModal").classList.remove("show"));
 $("readmeBtn").addEventListener("click",()=>window.open("https://github.com/malaramofficial/Waki-toki-mr#firebase-setup","_blank","noopener"));
-if(placeholder){$("stageStatus").textContent="Firebase setup required";$("joinHelp").textContent="Firebase सेटअप के बाद वीडियो या वॉइस कॉल चुनें।";}
+const inviteMode=new URLSearchParams(location.search).get("mode");if(placeholder){$("stageStatus").textContent="Firebase setup required";$("joinHelp").textContent="Firebase सेटअप के बाद वीडियो या वॉइस कॉल चुनें।";}else if(new URLSearchParams(location.search).has("room")&&(inviteMode==="video"||inviteMode==="voice")){joinRoom(inviteMode); }
 </script>
 </body>
 </html>
