@@ -1,819 +1,286 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Professional web walkie-talkie built using WebRTC and PeerJS" />
-    <title>Waki Toki | Professional Walkie Talkie</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्मार्ट ग्रुप वीडियो & PTT ऐप</title>
     <style>
-        :root {
-            --bg-1: #0b1020;
-            --bg-2: #121a2d;
-            --panel: rgba(18, 27, 45, 0.9);
-            --line: rgba(148, 163, 184, 0.18);
-            --primary: #5eead4;
-            --primary-2: #60a5fa;
-            --accent: #f97316;
-            --danger: #f87171;
-            --success: #4ade80;
-            --warning: #fbbf24;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --shadow: 0 20px 60px rgba(15, 23, 42, 0.6);
-        }
-
-        * { box-sizing: border-box; }
-
-        html, body {
-            margin: 0;
-            min-height: 100%;
-            font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(96, 165, 250, 0.2), transparent 30%),
-                radial-gradient(circle at top right, rgba(94, 234, 212, 0.18), transparent 25%),
-                linear-gradient(135deg, var(--bg-1), var(--bg-2));
-            color: var(--text);
-        }
-
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 18px;
-        }
-
-        .app-shell {
-            width: min(1100px, 100%);
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 24px;
-        }
-
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(12px);
-        }
-
-        .main-panel { padding: 28px; }
-
-        .hero {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .brand-badge {
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            display: grid;
-            place-items: center;
-            font-size: 24px;
-            box-shadow: 0 12px 30px rgba(96, 165, 250, 0.4);
-        }
-
-        h1 {
+            font-family: Arial, sans-serif;
+            background-color: #0b0f19;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px;
             margin: 0;
-            font-size: clamp(2rem, 3vw, 2.8rem);
-            letter-spacing: -0.04em;
+            box-sizing: border-box;
         }
-
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            color: var(--muted);
-            font-size: 0.9rem;
-            white-space: nowrap;
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #111827;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
         }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--warning);
-            box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.12);
-        }
-
-        .status-connected .status-dot {
-            background: var(--success);
-            box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.12);
-        }
-
-        .status-connected { color: #dcfce7; }
-
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 12px;
-            margin-top: 22px;
-        }
-
-        .field {
+        
+        /* मुख्य स्क्रीन जहाँ एक्टिव/बोलने वाले का बड़ा वीडियो दिखेगा */
+        .active-speaker-container {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        label {
-            font-size: 0.84rem;
-            color: var(--muted);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        input {
-            width: 100%;
-            height: 56px;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: rgba(15, 23, 42, 0.68);
-            color: var(--text);
-            font-size: 1rem;
-            padding: 0 16px;
-            outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        input:focus {
-            border-color: rgba(96, 165, 250, 0.7);
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.14);
-        }
-
-        .action {
-            border: none;
-            border-radius: 14px;
-            height: 56px;
-            padding: 0 18px;
-            font-size: 0.98rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .action:hover { transform: translateY(-1px); }
-
-        .action.primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            color: #03121a;
-        }
-
-        .action.secondary {
-            background: rgba(148, 163, 184, 0.08);
-            color: var(--text);
-            border: 1px solid var(--line);
-        }
-
-        .voice-panel {
-            margin-top: 28px;
-            padding: 20px 18px 18px;
-            background: rgba(10, 16, 28, 0.9);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-        }
-
-        .voice-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .signal {
-            font-size: 0.86rem;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .signal strong { color: var(--text); }
-
-        .meter {
-            display: flex;
-            align-items: end;
-            gap: 8px;
-            height: 80px;
-            padding: 10px 8px 4px;
-            border-radius: 16px;
-            background: linear-gradient(180deg, rgba(96, 165, 250, 0.10), rgba(15,23,42,0.2));
-            border: 1px solid rgba(148, 163, 184, 0.12);
-            margin-bottom: 18px;
-        }
-
-        .bar {
-            width: 12px;
-            border-radius: 999px 999px 0 0;
-            background: linear-gradient(180deg, var(--primary), var(--primary-2));
-            transform-origin: bottom;
-            transition: height 0.12s ease;
-            opacity: 0.9;
-            box-shadow: 0 0 16px rgba(94, 234, 212, 0.25);
-        }
-
-        .talk-controls {
-            display: flex;
-            align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 15px;
             flex-wrap: wrap;
-        }
-
-        .ptt {
-            width: min(280px, 100%);
-            height: 126px;
-            border: none;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #f97316, #ef4444);
-            color: white;
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            box-shadow: 0 18px 38px rgba(249, 115, 22, 0.28);
-            cursor: pointer;
-            transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-        }
-
-        .ptt:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .ptt.active {
-            background: linear-gradient(135deg, #22c55e, #14b8a6);
-            box-shadow: 0 18px 42px rgba(34, 197, 94, 0.28);
-        }
-
-        .mini-btn {
-            border: 1px solid var(--line);
-            background: rgba(15, 23, 42, 0.72);
-            color: var(--text);
-            border-radius: 12px;
-            padding: 0 16px;
-            height: 48px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .side-panel {
-            padding: 24px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .info-card {
-            background: rgba(10, 16, 28, 0.82);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            padding: 18px;
-        }
-
-        .info-card h3 { margin: 0 0 10px; font-size: 1.06rem; }
-
-        .info-card p, .info-card li {
-            color: var(--muted);
-            line-height: 1.6;
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0 0;
-            display: grid;
-            gap: 10px;
-        }
-
-        .feature-list li {
-            position: relative;
-            padding-left: 18px;
-        }
-
-        .feature-list li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            top: 0;
-            color: var(--primary);
-            font-size: 1.3rem;
-            line-height: 1;
-        }
-
-        .tiny {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 10px;
-        }
-
-        .peer-list {
-            margin-top: 12px;
-            display: grid;
-            gap: 8px;
-        }
-
-        .peer-item {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(15, 23, 42, 0.72);
-            padding: 10px 12px;
-            color: var(--text);
-            font-size: 0.82rem;
-            word-break: break-all;
-        }
-
-        .peer-item .label {
-            color: var(--muted);
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .speaker-box {
-            border: 1px solid rgba(94, 234, 212, 0.24);
-            background: rgba(94, 234, 212, 0.08);
+            min-height: 260px;
+            margin-bottom: 15px;
+            background: #1f2937;
             border-radius: 10px;
-            padding: 10px 12px;
-            margin-top: 10px;
-            color: var(--text);
-            font-size: 0.85rem;
-            line-height: 1.5;
+            padding: 10px;
+            border: 2px dashed #374151;
+            align-items: center;
+        }
+        
+        .active-box {
+            position: relative;
+            width: 280px;
+            height: 200px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid #22c55e; /* बोलने वाले पर हरा बॉर्डर (Focus) */
+            box-shadow: 0 0 15px rgba(34,197,94,0.5);
+            animation: popUp 0.3s ease-in-out;
         }
 
-        @media (max-width: 840px) {
-            .app-shell { grid-template-columns: 1fr; }
-            .controls { grid-template-columns: 1fr; }
-            .hero { flex-direction: column; align-items: flex-start; }
-            .talk-controls { flex-direction: column; }
+        @keyframes popUp {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* नीचे छोटे कॉर्नर वाले वीडियो (बाकी मेंबर्स) */
+        .grid-title {
+            text-align: left;
+            font-size: 14px;
+            color: #9ca3af;
+            margin: 5px 0;
+        }
+        .video-grid {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            min-height: 110px;
+        }
+        .video-box {
+            position: relative;
+            min-width: 130px;
+            width: 130px;
+            height: 95px;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #374151;
+            flex-shrink: 0;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-label {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1px 5px;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            box-sizing: border-box;
+        }
+        input {
+            background: #374151;
+            color: white;
+            border: 1px solid #4b5563;
+        }
+        .btn-connect { background: #2563eb; color: white; cursor: pointer; font-weight: bold; }
+        
+        /* पुश टू टॉक बटन */
+        .btn-ptt {
+            background: #dc2626;
+            color: white;
+            font-size: 18px;
+            height: 65px;
+            border-radius: 32px;
+            margin-top: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(220,38,38,0.4);
+            transition: 0.2s;
+        }
+        .btn-ptt.active { background: #16a34a; box-shadow: 0 4px 10px rgba(22,163,74,0.4); }
+        #status {
+            margin: 10px 0;
+            font-weight: bold;
+            color: #f59e0b;
         }
     </style>
 </head>
 <body>
-    <div class="app-shell">
-        <main class="panel main-panel">
-            <div class="hero">
-                <div class="brand">
-                    <div class="brand-badge">🎙️</div>
-                    <div>
-                        <h1>Waki Toki</h1>
-                    </div>
-                </div>
 
-                <div id="statusPill" class="status-pill">
-                    <span class="status-dot"></span>
-                    <span id="statusText">Waiting for connection</span>
-                </div>
-            </div>
+<div class="container">
+    <h2>🎥 स्मार्ट ग्रुप वीडियो & वॉकी-टॉकी</h2>
+    <div id="status">स्थिति: डिस्कनेक्टेड</div>
 
-            <div class="controls">
-                <div class="field">
-                    <label for="roomId">Room ID</label>
-                    <input id="roomId" type="text" placeholder="Enter room name like my-team-voice" />
-                </div>
-
-                <button id="joinBtn" class="action primary">Join Room</button>
-                <button id="copyBtn" class="action secondary">Copy Link</button>
-            </div>
-
-            <div class="voice-panel">
-                <div class="voice-header">
-                    <div class="signal">
-                        <span>Signal</span>
-                        <strong id="signalLabel">Standby</strong>
-                    </div>
-                    <button id="muteBtn" class="mini-btn" type="button">Mute mic</button>
-                </div>
-
-                <div id="volumeMeter" class="meter" aria-label="Microphone volume meter">
-                    <span class="bar" style="height: 18%"></span>
-                    <span class="bar" style="height: 32%"></span>
-                    <span class="bar" style="height: 48%"></span>
-                    <span class="bar" style="height: 62%"></span>
-                    <span class="bar" style="height: 58%"></span>
-                    <span class="bar" style="height: 42%"></span>
-                    <span class="bar" style="height: 70%"></span>
-                    <span class="bar" style="height: 58%"></span>
-                    <span class="bar" style="height: 36%"></span>
-                    <span class="bar" style="height: 24%"></span>
-                </div>
-
-                <div class="talk-controls">
-                    <button id="pttBtn" class="ptt" type="button" disabled>
-                        Hold to Talk
-                    </button>
-                </div>
-            </div>
-        </main>
-
-        <aside class="panel side-panel">
-            <div class="info-card">
-                <h3>Connected devices</h3>
-                <div id="peerList" class="peer-list">
-                    <div class="peer-item"><span class="label">Your Device ID</span><div id="myPeerIdText">Not connected</div></div>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <h3>Active speaker</h3>
-                <div id="speakerStatus" class="speaker-box">No one speaking right now</div>
-                <div class="tiny" id="roomLinkText" style="margin-top:14px;">Room link: not created yet</div>
-            </div>
-        </aside>
+    <div id="setup-box">
+        <input type="text" id="roomId" placeholder="रूम का नाम दर्ज करें (जैसे: my-room-99)">
+        <button class="btn-connect" onclick="joinRoom()">रूम से जुड़ें</button>
     </div>
 
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script>
-        const roomInput = document.getElementById('roomId');
-        const joinBtn = document.getElementById('joinBtn');
-        const copyBtn = document.getElementById('copyBtn');
-        const pttBtn = document.getElementById('pttBtn');
-        const muteBtn = document.getElementById('muteBtn');
-        const statusPill = document.getElementById('statusPill');
-        const statusText = document.getElementById('statusText');
-        const signalLabel = document.getElementById('signalLabel');
-        const roomLinkText = document.getElementById('roomLinkText');
-        const speakerStatus = document.getElementById('speakerStatus');
-        const peerListDiv = document.getElementById('peerList');
-        const myPeerIdText = document.getElementById('myPeerIdText');
-        const meterBars = [...document.querySelectorAll('.bar')];
+    <!-- 1. मुख्य स्क्रीन: जो बोल रहा है (बटन दबाए है) उसका वीडियो बड़ा होकर यहाँ पॉप-अप होगा -->
+    <div class="grid-title">🎙️ मुख्य वक्ता (Active Speakers):</div>
+    <div class="active-speaker-container" id="activeSpeakerContainer">
+        <!-- शुरुआत में लोकल यूजर खुद यहाँ दिखेगा जब वो बोलेगा -->
+        <div class="active-box" id="active-local" style="display:none;">
+            <video id="activeLocalVideo" autoplay playsinline muted></video>
+            <div class="user-label">आप (Me - Speaking)</div>
+        </div>
+    </div>
 
-        let peer = null;
-        let conn = null;
-        let localStream = null;
-        let remoteAudio = new Audio();
-        let isConnected = false;
-        let audioContext = null;
-        let analyser = null;
-        let animationId = null;
-        let activeSpeakerId = null;
-        let roomPeerIds = [];
-        let localIsTalking = false;
+    <!-- 2. नीचे की तरफ बाकी सभी सदस्यों के छोटे कॉर्नर वीडियो -->
+    <div class="grid-title">👥 अन्य सदस्य (All Participants):</div>
+    <div class="video-grid" id="videoGrid">
+        <div class="video-box" id="grid-local">
+            <video id="localVideo" autoplay playsinline muted></video>
+            <div class="user-label">आप (Me)</div>
+        </div>
+    </div>
 
-        const defaultRoom = 'waki-team-demo';
+    <!-- पुश टू टॉक (PTT) कंट्रोल बटन -->
+    <button id="pttBtn" class="btn-ptt" disabled 
+        onmousedown="startTalk()" onmouseup="stopTalk()" 
+        ontouchstart="startTalk()" ontouchend="stopTalk()">
+        बोलने के लिए दबाएं रखें<br><small>(Hold to Talk - Pop Up Video)</small>
+    </button>
+</div>
 
-        function setStatus(message, connected = false) {
-            statusText.textContent = message;
-            statusPill.classList.toggle('status-connected', connected);
+<!-- PeerJS CDN -->
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script>
+    let peer;
+    let localStream;
+    let connectedPeers = {};
+    const statusDiv = document.getElementById('status');
+    const videoGrid = document.getElementById('videoGrid');
+    const activeSpeakerContainer = document.getElementById('activeSpeakerContainer');
+    const localVideo = document.getElementById('localVideo');
+    const activeLocalVideo = document.getElementById('activeLocalVideo');
+    const activeLocalBox = document.getElementById('active-local');
+    const pttBtn = document.getElementById('pttBtn');
+    let isConnected = false;
+
+    async function joinRoom() {
+        const roomId = document.getElementById('roomId').value.trim();
+        if (!roomId) {
+            alert('कृपया रूम का नाम दर्ज करें!');
+            return;
         }
 
-        function hydrateRoomFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const room = params.get('room');
-            roomInput.value = room || defaultRoom;
+        statusDiv.innerText = "कैमरा और माइक की अनुमति ली जा रही है...";
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStream.getAudioTracks()[0].enabled = false; // शुरू में माइक म्यूट
+            localVideo.srcObject = localStream;
+            activeLocalVideo.srcObject = localStream;
+        } catch (err) {
+            alert("कैमरा/माइक की परमिशन नहीं मिली: " + err);
+            return;
         }
 
-        function buildRoomLink() {
-            const value = roomInput.value.trim();
-            const base = window.location.origin + window.location.pathname;
-            return value ? `${base}?room=${encodeURIComponent(value)}` : base;
-        }
+        statusDiv.innerText = "कनेक्ट हो रहा है...";
+        peer = new Peer();
 
-        function updateRoomLinkText() {
-            roomLinkText.textContent = `Room link: ${buildRoomLink()}`;
-        }
-
-        function updateSpeakerStatusUI() {
-            if (!activeSpeakerId) {
-                speakerStatus.textContent = 'No one speaking right now';
-                return;
-            }
-            speakerStatus.textContent = `Speaking now: ${activeSpeakerId}`;
-        }
-
-        function renderPeerList() {
-            peerListDiv.innerHTML = '';
-
-            const myItem = document.createElement('div');
-            myItem.className = 'peer-item';
-            myItem.innerHTML = `<span class="label">Your Device ID</span><div>${peer ? peer.id : 'Not connected'}</div>`;
-            peerListDiv.appendChild(myItem);
-
-            if (roomPeerIds.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'peer-item';
-                empty.innerHTML = '<span class="label">Connected devices</span><div>No devices connected yet</div>';
-                peerListDiv.appendChild(empty);
-                return;
-            }
-
-            const connectedTitle = document.createElement('div');
-            connectedTitle.className = 'peer-item';
-            connectedTitle.innerHTML = '<span class="label">Connected devices</span>';
-            peerListDiv.appendChild(connectedTitle);
-
-            roomPeerIds.forEach((id) => {
-                const item = document.createElement('div');
-                item.className = 'peer-item';
-                item.textContent = id;
-                peerListDiv.appendChild(item);
-            });
-        }
-
-        function addPeerId(id) {
-            if (!id || roomPeerIds.includes(id)) return;
-            roomPeerIds.push(id);
-            renderPeerList();
-        }
-
-        function removePeerId(id) {
-            roomPeerIds = roomPeerIds.filter((peerId) => peerId !== id);
-            renderPeerList();
-        }
-
-        function renderMeter(level) {
-            meterBars.forEach((bar, index) => {
-                const base = 18 + (index * 7);
-                const target = Math.max(14, Math.min(90, base + level * 1.2 + (index % 3) * 10));
-                bar.style.height = `${target}%`;
-                bar.style.opacity = level > 0.1 ? '1' : '0.7';
-            });
-        }
-
-        function startMeter() {
-            if (!localStream || !localStream.getAudioTracks().length) return;
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                const source = audioContext.createMediaStreamSource(localStream);
-                source.connect(analyser);
-                analyser.fftSize = 256;
-            }
-
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            function tick() {
-                analyser.getByteFrequencyData(dataArray);
-                const avg = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length / 255;
-                renderMeter(avg);
-                animationId = requestAnimationFrame(tick);
-            }
-            cancelAnimationFrame(animationId);
-            tick();
-        }
-
-        function stopMeter() {
-            cancelAnimationFrame(animationId);
-            renderMeter(0.08);
-        }
-
-        function setMicEnabled(enabled) {
-            if (!localStream || !localStream.getAudioTracks().length) return;
-            localStream.getAudioTracks()[0].enabled = enabled;
-            muteBtn.textContent = enabled ? 'Mute mic' : 'Unmute mic';
-        }
-
-        function sendSpeakerState(speaking) {
-            if (!conn || !conn.open) return;
-            conn.send({
-                type: 'speaker-state',
-                peerId: peer.id,
-                speaking: speaking
-            });
-        }
-
-        function handleSpeakerState(data) {
-            if (!data || data.type !== 'speaker-state') return;
-
-            if (data.speaking) {
-                activeSpeakerId = data.peerId;
-                signalLabel.textContent = 'Speaking';
-            } else if (activeSpeakerId === data.peerId) {
-                activeSpeakerId = null;
-                signalLabel.textContent = 'Listening';
-            }
-
-            updateSpeakerStatusUI();
-        }
-
-        function initializeRoomAsHost(roomId) {
-            peer = new Peer(roomId);
-            registerPeerHandlers();
-
-            peer.on('open', () => {
-                setStatus('Room created — waiting for peer', false);
-                signalLabel.textContent = 'Host ready';
-                myPeerIdText.textContent = peer.id;
-                renderPeerList();
-                addPeerId(peer.id);
-                updateRoomLinkText();
-            });
-        }
-
-        function initializeRoomAsGuest(roomId) {
-            peer = new Peer();
-            registerPeerHandlers();
-
-            peer.on('open', () => {
-                setStatus('Joining room...', false);
-                signalLabel.textContent = 'Connecting';
-                myPeerIdText.textContent = peer.id;
-                renderPeerList();
-                addPeerId(peer.id);
-                conn = peer.connect(roomId);
-                setupConnection();
-            });
-        }
-
-        function registerPeerHandlers() {
-            if (!peer) return;
-
-            peer.on('connection', (incomingConn) => {
-                conn = incomingConn;
-                addPeerId(incomingConn.peer);
-                setupConnection();
-            });
-
-            peer.on('call', (call) => {
-                if (!localStream) return;
-                call.answer(localStream);
-                call.on('stream', (stream) => {
-                    remoteAudio.srcObject = stream;
-                    remoteAudio.play().catch(() => {});
-                });
-            });
-
-            peer.on('error', (error) => {
-                console.error('Peer error:', error);
-                if (error.type === 'unavailable-id') {
-                    initializeRoomAsGuest(roomInput.value.trim());
-                    return;
-                }
-                setStatus('Connection error', false);
-                signalLabel.textContent = 'Error';
-            });
-        }
-
-        function setupConnection() {
-            if (!conn) return;
-
-            conn.on('open', () => {
-                isConnected = true;
-                setStatus('Room connected', true);
-                signalLabel.textContent = 'Listening';
-                pttBtn.disabled = false;
-                setMicEnabled(false);
-                addPeerId(conn.peer);
-                updateSpeakerStatusUI();
-
-                try {
-                    const call = peer.call(conn.peer, localStream);
-                    call.on('stream', (stream) => {
-                        remoteAudio.srcObject = stream;
-                        remoteAudio.play().catch(() => {});
-                    });
-                } catch (error) {
-                    console.log('Call setup error:', error);
-                }
-            });
-
-            conn.on('data', (data) => {
-                handleSpeakerState(data);
-            });
-
-            conn.on('close', () => {
-                isConnected = false;
-                setStatus('Connection closed', false);
-                signalLabel.textContent = 'Closed';
-                pttBtn.disabled = true;
-                pttBtn.classList.remove('active');
-                if (conn.peer) removePeerId(conn.peer);
-            });
-        }
-
-        function connectRoom() {
-            const roomId = roomInput.value.trim();
-            if (!roomId) {
-                alert('Please enter a room name.');
-                return;
-            }
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                alert('This browser does not support microphone access.');
-                return;
-            }
-
-            setStatus('Requesting microphone access...');
-            signalLabel.textContent = 'Starting';
-
-            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-                .then((stream) => {
-                    localStream = stream;
-                    setMicEnabled(false);
-                    startMeter();
-                    initializeRoomAsHost(roomId);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    alert('Microphone access was denied or unavailable.');
-                    setStatus('Microphone blocked', false);
-                    signalLabel.textContent = 'Blocked';
-                });
-        }
-
-        function startTalk() {
-            if (!isConnected || !localStream) return;
-            const track = localStream.getAudioTracks()[0];
-            if (!track) return;
-
-            localIsTalking = true;
-            track.enabled = true;
-            pttBtn.classList.add('active');
-            pttBtn.textContent = 'Talking...';
-            signalLabel.textContent = 'You are speaking';
-            activeSpeakerId = peer.id;
-            sendSpeakerState(true);
-            updateSpeakerStatusUI();
-        }
-
-        function stopTalk() {
-            if (!localStream) return;
-            const track = localStream.getAudioTracks()[0];
-            if (!track) return;
-
-            localIsTalking = false;
-            track.enabled = false;
-            pttBtn.classList.remove('active');
-            pttBtn.textContent = 'Hold to Talk';
-            signalLabel.textContent = isConnected ? 'Listening' : 'Standby';
-            if (activeSpeakerId === peer.id) {
-                activeSpeakerId = null;
-                sendSpeakerState(false);
-            }
-            updateSpeakerStatusUI();
-        }
-
-        joinBtn.addEventListener('click', connectRoom);
-
-        pttBtn.addEventListener('pointerdown', startTalk);
-        pttBtn.addEventListener('pointerup', stopTalk);
-        pttBtn.addEventListener('pointerleave', stopTalk);
-        pttBtn.addEventListener('pointercancel', stopTalk);
-
-        pttBtn.addEventListener('touchstart', (event) => {
-            event.preventDefault();
-            startTalk();
-        }, { passive: false });
-
-        pttBtn.addEventListener('touchend', stopTalk);
-
-        muteBtn.addEventListener('click', () => {
-            if (!localStream) {
-                alert('Allow microphone access first.');
-                return;
-            }
-
-            const track = localStream.getAudioTracks()[0];
-            if (!track) return;
-
-            const nextState = !track.enabled;
-            track.enabled = nextState;
-            muteBtn.textContent = nextState ? 'Mute mic' : 'Unmute mic';
-            if (isConnected) {
-                signalLabel.textContent = nextState ? 'Listening' : 'Muted';
-            }
+        peer.on('open', (id) => {
+            statusDiv.innerText = "🟢 कनेक्टेड! बातचीत के लिए तैयार।";
+            statusDiv.style.color = "#22c55e";
+            document.getElementById('setup-box').style.display = "none";
+            pttBtn.disabled = false;
+            isConnected = true;
         });
 
-        copyBtn.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(buildRoomLink());
-                copyBtn.textContent = 'Link Copied';
-                setTimeout(() => { copyBtn.textContent = 'Copy Link'; }, 1300);
-            } catch (error) {
-                alert('Copy failed. Please copy the room link manually.');
-            }
+        peer.on('call', (call) => {
+            call.answer(localStream);
+            call.on('stream', (remoteStream) => {
+                addParticipant(call.peer, remoteStream);
+            });
+            connectedPeers[call.peer] = { call: call, stream: remoteStream, speaking: false };
         });
 
-        roomInput.addEventListener('input', updateRoomLinkText);
-
-        window.addEventListener('beforeunload', () => {
-            if (localStream) {
-                localStream.getTracks().forEach((track) => track.stop());
-            }
-            stopMeter();
+        peer.on('error', (err) => {
+            console.error(err);
         });
+    }
 
-        hydrateRoomFromUrl();
-        renderPeerList();
-        updateRoomLinkText();
-        updateSpeakerStatusUI();
-        renderMeter(0.08);
-    </script>
+    // नया यूजर जोड़ने का फंक्शन
+    function addParticipant(peerId, stream) {
+        if (document.getElementById(`grid-${peerId}`)) return;
+
+        // नीचे छोटे ग्रिड में बॉक्स जोड़ें
+        const box = document.createElement('div');
+        box.className = 'video-box';
+        box.id = `grid-${peerId}`;
+
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.playsInline = true;
+
+        const label = document.createElement('div');
+        label.className = 'user-label';
+        label.innerText = `यूजर: ${peerId.substring(0, 4)}`;
+
+        box.appendChild(video);
+        box.appendChild(label);
+        videoGrid.appendChild(box);
+
+        connectedPeers[peerId] = { stream: stream, peerId: peerId };
+    }
+
+    // Push To Talk: बटन दबाने पर माइक ऑन और वीडियो पॉप-अप होकर ऊपर (Active Speaker) आ जाएगा
+    function startTalk() {
+        if (!isConnected || !localStream) return;
+        
+        // 1. माइक ऑन करें
+        localStream.getAudioTracks()[0].enabled = true;
+        
+        // 2. अपना वीडियो बड़ा करके ऊपर एक्टिव स्पीकर बॉक्स में दिखाएं
+        activeLocalBox.style.display = "block";
+
+        pttBtn.classList.add('active');
+        pttBtn.innerText = "बोल रहे हैं (माइक्रोफ़ोन ऑन) 🎙️";
+    }
+
+    // बटन छोड़ने पर माइक बंद और वीडियो वापस नीचे छोटे ग्रिड में चला जाएगा
+    function stopTalk() {
+        if (!isConnected || !localStream) return;
+        
+        // 1. माइक म्यूट करें
+        localStream.getAudioTracks()[0].enabled = false;
+        
+        // 2. अपना बड़ा वीडियो छुपाएं
+        activeLocalBox.style.display = "none";
+
+        pttBtn.classList.remove('active');
+        pttBtn.innerText = "बोलने के लिए दबाएं रखें\n(Hold to Talk - Pop Up Video)";
+    }
+</script>
+
 </body>
 </html>
