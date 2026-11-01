@@ -228,6 +228,31 @@
             box-shadow: 0 0 16px rgba(94, 234, 212, 0.25);
         }
 
+        .mode-switch {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 120px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.72);
+            color: var(--text);
+            height: 44px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #02181d;
+            border-color: transparent;
+        }
+
         .talk-controls {
             display: flex;
             align-items: center;
@@ -369,6 +394,11 @@
                     <button id="muteBtn" class="mini-btn" type="button">Mute mic</button>
                 </div>
 
+                <div class="mode-switch">
+                    <button id="listenModeBtn" class="mode-btn active" type="button">Listen</button>
+                    <button id="talkModeBtn" class="mode-btn" type="button">Talk</button>
+                </div>
+
                 <div id="volumeMeter" class="meter" aria-label="Microphone volume meter">
                     <span class="bar" style="height: 18%"></span>
                     <span class="bar" style="height: 32%"></span>
@@ -396,15 +426,15 @@
                 <p>Fast, low-latency voice communication over the browser. No app install required.</p>
                 <ul class="feature-list">
                     <li>Instant room-based connection</li>
-                    <li>Push-to-talk interaction</li>
-                    <li>Mic permission and live signal</li>
+                    <li>Local talk mode only</li>
+                    <li>Listen-only mode support</li>
                     <li>Share room link</li>
                 </ul>
             </div>
 
             <div class="info-card">
                 <h3>How it works</h3>
-                <p>Open the same app in two browsers. Use the same room ID and hold the button to speak.</p>
+                <p>Use Listen mode to hear the room. Switch to Talk mode on the device that should transmit.</p>
                 <div class="tiny" id="roomLinkText">Room link: not created yet</div>
             </div>
         </aside>
@@ -417,6 +447,8 @@
         const copyBtn = document.getElementById('copyBtn');
         const pttBtn = document.getElementById('pttBtn');
         const muteBtn = document.getElementById('muteBtn');
+        const listenModeBtn = document.getElementById('listenModeBtn');
+        const talkModeBtn = document.getElementById('talkModeBtn');
         const statusPill = document.getElementById('statusPill');
         const statusText = document.getElementById('statusText');
         const signalLabel = document.getElementById('signalLabel');
@@ -431,6 +463,7 @@
         let audioContext = null;
         let analyser = null;
         let animationId = null;
+        let localMode = 'listen';
 
         const defaultRoom = 'waki-team-demo';
 
@@ -453,6 +486,25 @@
 
         function updateRoomLinkText() {
             roomLinkText.textContent = `Room link: ${buildRoomLink()}`;
+        }
+
+        function updateModeUI() {
+            const isTalk = localMode === 'talk';
+            talkModeBtn.classList.toggle('active', isTalk);
+            listenModeBtn.classList.toggle('active', !isTalk);
+            pttBtn.disabled = !isConnected || !isTalk;
+            if (!isConnected) {
+                pttBtn.textContent = 'Hold to Talk';
+                pttBtn.classList.remove('active');
+                signalLabel.textContent = 'Standby';
+            } else if (isTalk) {
+                pttBtn.textContent = 'Hold to Talk';
+                signalLabel.textContent = 'Live';
+            } else {
+                pttBtn.textContent = 'Listening...';
+                pttBtn.classList.remove('active');
+                signalLabel.textContent = 'Listening';
+            }
         }
 
         function renderMeter(level) {
@@ -503,7 +555,7 @@
             peer.on('open', () => {
                 setStatus('Room created — waiting for peer', false);
                 signalLabel.textContent = 'Host ready';
-                pttBtn.disabled = true;
+                updateModeUI();
                 const url = new URL(window.location.href);
                 url.searchParams.set('room', roomId);
                 window.history.replaceState({}, '', url);
@@ -557,9 +609,9 @@
             conn.on('open', () => {
                 isConnected = true;
                 setStatus('Room connected', true);
-                signalLabel.textContent = 'Live';
-                pttBtn.disabled = false;
+                signalLabel.textContent = localMode === 'talk' ? 'Live' : 'Listening';
                 setMicEnabled(false);
+                updateModeUI();
 
                 try {
                     const call = peer.call(conn.peer, localStream);
@@ -577,6 +629,7 @@
                 setStatus('Connection closed', false);
                 signalLabel.textContent = 'Closed';
                 pttBtn.disabled = true;
+                pttBtn.classList.remove('active');
             });
         }
 
@@ -611,7 +664,7 @@
         }
 
         function startTalk() {
-            if (!isConnected || !localStream) return;
+            if (!isConnected || !localStream || localMode !== 'talk') return;
             const track = localStream.getAudioTracks()[0];
             if (!track) return;
 
@@ -629,10 +682,22 @@
             track.enabled = false;
             pttBtn.classList.remove('active');
             pttBtn.textContent = 'Hold to Talk';
-            signalLabel.textContent = isConnected ? 'Live' : 'Standby';
+            signalLabel.textContent = isConnected ? (localMode === 'talk' ? 'Live' : 'Listening') : 'Standby';
         }
 
         joinBtn.addEventListener('click', connectRoom);
+
+        talkModeBtn.addEventListener('click', () => {
+            localMode = 'talk';
+            updateModeUI();
+        });
+
+        listenModeBtn.addEventListener('click', () => {
+            localMode = 'listen';
+            setMicEnabled(false);
+            stopTalk();
+            updateModeUI();
+        });
 
         pttBtn.addEventListener('pointerdown', startTalk);
         pttBtn.addEventListener('pointerup', stopTalk);
@@ -659,7 +724,7 @@
             track.enabled = nextState;
             muteBtn.textContent = nextState ? 'Mute mic' : 'Unmute mic';
             if (isConnected) {
-                signalLabel.textContent = nextState ? 'Live' : 'Muted';
+                signalLabel.textContent = nextState ? (localMode === 'talk' ? 'Live' : 'Listening') : 'Muted';
             }
         });
 
@@ -683,6 +748,7 @@
         });
 
         hydrateRoomFromUrl();
+        updateModeUI();
         updateRoomLinkText();
         renderMeter(0.08);
     </script>
