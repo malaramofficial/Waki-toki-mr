@@ -22,13 +22,13 @@
  <div class="top-actions"><div class="pill"><span class="dot" id="connectionDot"></span><span id="connectionLabel">Not connected</span></div><button class="btn secondary" id="shareTop" disabled>↗ <span>Invite</span></button></div>
 </header>
 <section class="hero">
- <div><div class="eyebrow">GROUP VIDEO · PUSH TO TALK</div><h1>हर आवाज़ को मिले अपनी जगह।</h1><p>बोलिए, जुड़िए और देखिए — कौन बोल रहा है। एक स्मार्ट ग्रुप कॉल अनुभव।</p></div>
+ <div><div class="eyebrow">GROUP VIDEO · PUSH TO TALK</div><h1>हर आवाज़ को मिले अपनी जगह।</h1><p>लिंक खोलते ही कॉल में जुड़ें — बिना रूम कोड और बिना नाम लिखे।</p></div>
  <div class="room-meta" id="roomMeta"><div class="room-chip">ROOM <b id="roomCodeLabel">—</b></div><div class="room-chip" id="participantCountTop">0 participants</div></div>
 </section>
 <main class="layout">
  <section class="main-panel">
   <div class="stage-head"><strong>LIVE ROOM</strong><span id="stageStatus">रूम में शामिल होने की प्रतीक्षा है</span></div>
-  <div class="stage" id="stage" data-active="0"><div class="empty" id="emptyState"><div><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h3>आपका कॉल रूम तैयार है</h3><p>दाईं ओर रूम कोड डालकर जुड़ें या नया रूम बनाएं। आपके साथी जुड़ते ही उनकी वीडियो यहाँ दिखाई देगी।</p></div></div></div>
+  <div class="stage" id="stage" data-active="0"><div class="empty" id="emptyState"><div><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h3>आपका कॉल रूम तैयार है</h3><p>कॉल अपने आप शुरू हो रही है। कैमरा और माइक्रोफोन की अनुमति दें।</p></div></div></div>
   <div class="call-controls">
    <button class="control" id="cameraBtn" disabled aria-label="Toggle camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Camera</span></button>
    <button class="control" id="pttBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span><b>Hold to Talk</b><small>दबाकर बोलें</small></span></button>
@@ -40,14 +40,12 @@
  <aside class="side-panel">
   <div class="side-title">रूम कंट्रोल <span class="count" id="memberCount">0 / 12</span></div>
   <div class="join-card" id="joinCard">
-   <h3>रूम में शामिल हों</h3><p>अपना नाम और रूम कोड डालें। नया रूम बनाने के लिए कोई नया कोड लिखें।</p>
-   <input class="field" id="displayName" maxlength="24" placeholder="आपका नाम" autocomplete="name">
-   <input class="field" id="roomInput" maxlength="40" placeholder="रूम कोड (जैसे: friends-01)">
-   <button class="btn" id="joinBtn">रूम बनाएं / जुड़ें <span>→</span></button>
+   <h3>कॉल से जुड़ रहे हैं…</h3><p>कृपया कैमरा और माइक्रोफोन की अनुमति दें।</p>
+   <button class="btn" id="joinBtn" hidden>फिर से कोशिश करें ↻</button>
   </div>
   <div class="side-title">सदस्य <span class="count" id="memberCountLabel">0 online</span></div>
   <div class="member-list" id="memberList"><div class="member"><div class="member-avatar">?</div><div class="member-info"><strong>अभी कोई नहीं</strong><small>आपके जुड़ने की प्रतीक्षा</small></div></div></div>
-  <div class="notice">🔒 कॉल में शामिल होने के लिए सभी लोगों को एक ही रूम कोड चाहिए। बेहतर कॉल क्वालिटी के लिए स्थिर इंटरनेट और कैमरा/माइक अनुमति दें।</div>
+  <div class="notice">🔒 एक ही Invite Link खोलने वाले सभी लोग उसी कॉल में जुड़ेंगे। बेहतर कॉल क्वालिटी के लिए स्थिर इंटरनेट और कैमरा/माइक अनुमति दें।</div>
  </aside>
 </main>
 <footer class="footer"><span>Waki Toki · A smarter way to talk</span><span>Made with care by Mala Ram Godara</span></footer>
@@ -116,15 +114,16 @@ function subscribeRoom(){
 }
 async function joinRoom(){
  if(state.joinBusy||state.joined)return;
- const name=$("displayName").value.trim();const room=safeRoom($("roomInput").value);
- if(!name){toast("पहले अपना नाम लिखें।");$("displayName").focus();return;}
- if(!room){toast("रूम कोड दर्ज करें।");$("roomInput").focus();return;}
+ const incomingRoom=safeRoom(new URLSearchParams(location.search).get("room")||"");
+ const room=incomingRoom||("room-"+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,"").slice(0,12):Math.random().toString(36).slice(2,14)));
+ const name="Guest-"+Math.random().toString(36).slice(2,6).toUpperCase();
+ if(!incomingRoom){const u=new URL(location.href);u.searchParams.set("room",room);history.replaceState({},"",u);}
  if(placeholder){$("configModal").classList.add("show");return;}
  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){toast("कैमरा/माइक के लिए HTTPS वेबसाइट खोलें।");return;}
  state.joinBusy=true;$("joinBtn").disabled=true;$("joinBtn").textContent="कनेक्ट हो रहा है…";setConnection("Connecting…");
  try{
   state.name=name;state.room=room;
-  state.app=initializeApp(firebaseConfig);state.auth=getAuth(state.app);state.db=getDatabase(state.app);
+  state.app=state.app||initializeApp(firebaseConfig);state.auth=state.auth||getAuth(state.app);state.db=state.db||getDatabase(state.app);
   const cred=await signInAnonymously(state.auth);state.uid=cred.user.uid;
   await startMedia();
   state.peer=new Peer(undefined,{debug:1});
@@ -140,17 +139,17 @@ async function joinRoom(){
     await set(participantRef(id),record);
     state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
-    $("joinCard").classList.add("hidden");$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
+    $("joinCard").classList.add("hidden");$("joinBtn").hidden=true;$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
     $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("muteBtn").disabled=false;$("pttBtn").disabled=false;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
-    setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';
-   }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}
+    setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";
+   }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}
   });
   state.peer.on("call",call=>{call.answer(state.localStream);attachCall(call);});
   state.peer.on("error",err=>{console.error(err);if(err.type==="peer-unavailable")return;toast("कनेक्शन समस्या: "+err.type);});
   state.peer.on("disconnected",()=>{setConnection("Reconnecting…");if(state.peer&&!state.peer.destroyed)state.peer.reconnect();});
-  state.peer.on("close",()=>{setConnection("Disconnected");if(!state.joined){state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}});
+  state.peer.on("close",()=>{setConnection("Disconnected");if(!state.joined){state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}});
  }catch(e){console.error(e);toast(e.message||"कनेक्ट नहीं हो सका।");if(state.localStream)state.localStream.getTracks().forEach(t=>t.stop());}
- finally{if(!state.peer||state.peer.open){state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}}
+ finally{if(!state.peer||state.peer.open){state.joinBusy=false;if(!state.joined){$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}}}
 }
 function startTalk(){if(!state.joined||state.talking||state.micMuted)return;state.talking=true;state.localStream.getAudioTracks().forEach(t=>t.enabled=true);$("pttBtn").classList.add("active");updateLocalPresence({speaking:true});render();}
 function stopTalk(){if(!state.joined||!state.talking)return;state.talking=false;state.localStream.getAudioTracks().forEach(t=>t.enabled=false);$("pttBtn").classList.remove("active");updateLocalPresence({speaking:false});render();}
@@ -168,17 +167,15 @@ async function leaveRoom(){
  ["cameraBtn","muteBtn","pttBtn","leaveBtn"].forEach(id=>$(id).disabled=true);
  ["cameraBtn","muteBtn","pttBtn"].forEach(id=>$(id).classList.remove("off","active"));
  $("cameraBtn").querySelector("span").textContent="Camera";$("muteBtn").querySelector("span").textContent="Mic";
- setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';render();toast("आप रूम से बाहर आ गए हैं।");
+ setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";render();toast("आप रूम से बाहर आ गए हैं।");
 }
 async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){$("roomInput").value=state.room;toast("रूम कोड: "+state.room);}}
 $("joinBtn").addEventListener("click",joinRoom);$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("muteBtn").addEventListener("click",toggleMic);$("shareTop").addEventListener("click",invite);
 $("pttBtn").addEventListener("pointerdown",e=>{e.preventDefault();try{$("pttBtn").setPointerCapture(e.pointerId);}catch(_){}if(!state.micMuted)startTalk();});["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(ev=>$("pttBtn").addEventListener(ev,e=>{e.preventDefault();stopTalk();}));
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopTalk();});
-$("roomInput").addEventListener("keydown",e=>{if(e.key==="Enter")joinRoom();});
 $("closeConfig").addEventListener("click",()=>$("configModal").classList.remove("show"));
 $("readmeBtn").addEventListener("click",()=>window.open("https://github.com/malaramofficial/Waki-toki-mr#firebase-setup","_blank","noopener"));
-const roomFromUrl=new URLSearchParams(location.search).get("room");if(roomFromUrl)$("roomInput").value=roomFromUrl;
-if(placeholder){$("stageStatus").textContent="Firebase setup required";$("joinBtn").addEventListener("click",()=>{});}
+if(placeholder){$("stageStatus").textContent="Firebase setup required";}else{joinRoom();}
 </script>
 </body>
 </html>
