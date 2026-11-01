@@ -109,9 +109,10 @@ function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!sta
 async function startMedia(){try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});}catch(videoError){console.warn("Camera unavailable; retrying audio-only",videoError);state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});state.cameraOff=true;toast("कैमरा उपलब्ध नहीं है — आप ऑडियो से जुड़ रहे हैं।");}state.localStream.getAudioTracks().forEach(t=>t.enabled=false);return state.localStream;}
 function subscribeRoom(){
  const base="wakiTokiRooms/"+state.room+"/participants";
- state.unsubs.push(onChildAdded(ref(state.db,base),snap=>{const d=snap.val();if(d&&snap.key!==state.peerId)addRemote(snap.key,d);}));
- state.unsubs.push(onChildChanged(ref(state.db,base),snap=>{const d=snap.val();if(d)addRemote(snap.key,d);}));
- state.unsubs.push(onChildRemoved(ref(state.db,base),snap=>removeRemote(snap.key)));
+ const onCancel=error=>{console.error("Room subscription",error);toast("रूम सूची पढ़ने की अनुमति नहीं मिली। Firebase Database Rules जाँचें।");};
+ state.unsubs.push(onChildAdded(ref(state.db,base),snap=>{const d=snap.val();if(d&&snap.key!==state.peerId)addRemote(snap.key,d);},onCancel));
+ state.unsubs.push(onChildChanged(ref(state.db,base),snap=>{const d=snap.val();if(d)addRemote(snap.key,d);},onCancel));
+ state.unsubs.push(onChildRemoved(ref(state.db,base),snap=>removeRemote(snap.key),onCancel));
 }
 async function joinRoom(){
  if(state.joinBusy||state.joined)return;
@@ -129,15 +130,15 @@ async function joinRoom(){
   state.peer=new Peer(undefined,{debug:1});
   state.joinTimeout=setTimeout(async()=>{if(!state.joined&&state.peer){toast("कनेक्शन में समय लग रहा है। कृपया दोबारा कोशिश करें।");await leaveRoom();}},20000);
   state.peer.on("open",async id=>{
-   clearTimeout(state.joinTimeout);state.joinTimeout=null;
    try{
     state.peerId=id;
-    const existing=await new Promise(resolve=>onValue(ref(state.db,"wakiTokiRooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},{onlyOnce:true}));
+    subscribeRoom();
+    const existing=await new Promise((resolve,reject)=>onValue(ref(state.db,"wakiTokiRooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},error=>reject(error),{onlyOnce:true}));
     if(Object.keys(existing).length>=12){throw new Error("इस रूम में अधिकतम 12 सदस्य जुड़ सकते हैं।");}
     const record={id,name,uid:state.uid,speaking:false,cameraOff:false,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};
     await set(participantRef(id),record);
     await onDisconnect(participantRef(id)).remove();
-    state.participants.set(id,{...record,stream:state.localStream});state.joined=true;subscribeRoom();
+    state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
     $("joinCard").classList.add("hidden");$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
     $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("muteBtn").disabled=false;$("pttBtn").disabled=false;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
