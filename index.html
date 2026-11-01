@@ -49,6 +49,56 @@
 @keyframes heartBeat{0%,100%{transform:scale(1)}12%{transform:scale(1.2)}24%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.love-note span{animation:none}}
 
+
+/* Premium romantic polish + explicit natural (non-mirrored) camera rendering */
+:root{--bg:#100813;--panel:#1c1220;--panel2:#28182b;--line:#624056;--muted:#d0b4c4;--text:#fff8fc;--blue:#ec8ab2;--green:#f1b5ce;--rose:#ff9fc4;--shadow:0 24px 80px #050208aa}
+html,body{background:radial-gradient(ellipse at 12% 4%,#6b294e66 0,transparent 34%),radial-gradient(ellipse at 88% 22%,#56316a55 0,transparent 36%),linear-gradient(160deg,#100813,#170d1d 52%,#0d0a13)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:radial-gradient(#ffd4e5 0.7px,transparent .8px);background-size:31px 31px;mask-image:linear-gradient(to bottom,#000,transparent 75%);z-index:0}
+.app{position:relative;z-index:1;max-width:1180px}
+.topbar{border-bottom-color:#e99abc26}
+.brandmark{border-radius:15px;background:linear-gradient(145deg,#ffc3d9,#c34d83);box-shadow:0 10px 34px #d65b9666}
+.eyebrow{color:#ffb6d1;letter-spacing:2.8px}
+.hero{padding-top:42px;padding-bottom:28px}
+.hero h1{font-size:clamp(32px,5vw,48px);letter-spacing:-1.8px}
+.hero p{color:#d4b8c8}
+.love-note{padding:11px 17px;background:linear-gradient(110deg,#4a203cdd,#2a1936dd);border-color:#d47ba366;box-shadow:inset 0 1px #ffffff12,0 10px 28px #0003}
+.layout{gap:20px}
+.main-panel,.side-panel{background:linear-gradient(155deg,#2a1a2beF,#17101ff2 72%);border:1px solid #a65e8060;box-shadow:0 24px 65px #0006,inset 0 1px #ffffff10;backdrop-filter:blur(18px)}
+.main-panel{padding:18px}
+.stage-head{padding:4px 5px 17px}
+.stage-head strong,.side-title{font-size:14px;letter-spacing:.25px}
+.stage{gap:14px;min-height:430px}
+.participant{border:1px solid #b36b8d80;border-radius:20px;background:#211425;box-shadow:0 12px 30px #0004}
+.participant video,.participant video.local-preview{transform:none!important;-webkit-transform:none!important;direction:ltr;object-fit:cover;backface-visibility:visible;-webkit-backface-visibility:visible}
+.participant.speaking{border-color:#ffacd0;box-shadow:0 0 0 4px #f28db522,0 18px 45px #e66b9a2b}
+.person-name{font-size:13px;text-shadow:0 2px 8px #000}
+.person-state{background:#160d1bdc;border-color:#ffc1da35}
+.call-controls{padding-top:22px}
+.control{height:54px;border-radius:17px;box-shadow:0 8px 20px #0003}
+.control.leave{background:linear-gradient(135deg,#dc648f,#a82e62);box-shadow:0 9px 25px #b63e7040}
+.btn{background:linear-gradient(135deg,#f19abd,#c24e83);box-shadow:0 8px 22px #b84a7c35}
+.btn.secondary{background:#35233a;border-color:#80516c}
+.side-panel{padding:20px}
+.join-card,.member{background:linear-gradient(135deg,#2b1b30,#201527);border-color:#764a64}
+.count,.room-chip,.pill{background:#2c1c31;border-color:#70465f;color:#f8dfeb}
+.member-avatar,.avatar span{background:linear-gradient(145deg,#ffb4d0,#98518e);box-shadow:0 7px 18px #0004}
+.notice{color:#c3a6b8}
+.footer{color:#c5a1b5}
+.love-footer{justify-content:center;text-align:center;gap:8px 24px;padding:22px 8px}
+.camera-permission-card,.modal{background:linear-gradient(155deg,#35203a,#1b1122);border-color:#a65e80}
+.camera-permission-icon{background:#5a2e4b;color:#ffd0e1}
+.toast{background:#2d1c32;border-color:#8d5875}
+@media(max-width:600px){
+ body{padding:0 10px 18px}
+ .hero{padding-top:28px}
+ .main-panel{padding:12px}
+ .stage{gap:10px;min-height:330px}
+ .stage[data-count="1"] .participant.local-participant{width:min(100%,350px);aspect-ratio:9/16;min-height:390px}
+ .stage[data-count="2"] .participant{aspect-ratio:9/16;min-height:245px}
+ .person-name{font-size:11px}
+ .side-panel{padding:16px}
+}
+
 </style>
 </head>
 <body>
@@ -141,7 +191,7 @@ function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!sta
 async function startMedia(){
  $("cameraPermissionModal").classList.remove("hidden");
  $("cameraPermissionMessage").textContent="वीडियो कॉल में शामिल होने के लिए ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।";
- try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});$("cameraPermissionModal").classList.add("hidden");return state.localStream;}
+ try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16},facingMode:{ideal:"user"}}});$("cameraPermissionModal").classList.add("hidden");return state.localStream;}
  catch(error){$("cameraPermissionModal").classList.remove("hidden");$("cameraPermissionMessage").textContent=error.name==="NotAllowedError"?"कैमरे की अनुमति अभी नहीं मिली है। ब्राउज़र के अनुमति पॉप-अप में Allow चुनें। यदि आपने Block किया है, तो साइट सेटिंग्स में Camera को Allow करके नीचे दोबारा कोशिश करें।":"कैमरा उपलब्ध नहीं है या अनुमति नहीं मिली। कैमरा चालू करें और नीचे दोबारा कोशिश करें।";throw error;}
 }
 function subscribeRoom(){
