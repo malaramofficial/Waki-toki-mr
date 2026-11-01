@@ -10,7 +10,6 @@
             --bg-1: #0b1020;
             --bg-2: #121a2d;
             --panel: rgba(18, 27, 45, 0.9);
-            --panel-strong: rgba(12, 18, 30, 0.96);
             --line: rgba(148, 163, 184, 0.18);
             --primary: #5eead4;
             --primary-2: #60a5fa;
@@ -399,13 +398,13 @@
                     <li>Instant room-based connection</li>
                     <li>Push-to-talk interaction</li>
                     <li>Mic permission and live signal</li>
-                    <li>Clipboard share for team links</li>
+                    <li>Share room link</li>
                 </ul>
             </div>
 
             <div class="info-card">
                 <h3>How it works</h3>
-                <p>Create a room, share the link, and connect a second browser to the same room ID.</p>
+                <p>Open the same app in two browsers. Use the same room ID and hold the button to speak.</p>
                 <div class="tiny" id="roomLinkText">Room link: not created yet</div>
             </div>
         </aside>
@@ -432,9 +431,8 @@
         let audioContext = null;
         let analyser = null;
         let animationId = null;
-        let roomHostMode = false;
 
-        const defaultRoom = "waki-team-demo";
+        const defaultRoom = 'waki-team-demo';
 
         function setStatus(message, connected = false) {
             statusText.textContent = message;
@@ -444,8 +442,7 @@
         function hydrateRoomFromUrl() {
             const params = new URLSearchParams(window.location.search);
             const room = params.get('room');
-            if (room) roomInput.value = room;
-            else roomInput.value = defaultRoom;
+            roomInput.value = room || defaultRoom;
         }
 
         function buildRoomLink() {
@@ -478,14 +475,12 @@
             }
 
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
             function tick() {
                 analyser.getByteFrequencyData(dataArray);
                 const avg = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length / 255;
                 renderMeter(avg);
                 animationId = requestAnimationFrame(tick);
             }
-
             cancelAnimationFrame(animationId);
             tick();
         }
@@ -501,7 +496,34 @@
             muteBtn.textContent = enabled ? 'Mute mic' : 'Unmute mic';
         }
 
-        function attachPeerEvents() {
+        function initializeRoomAsHost(roomId) {
+            peer = new Peer(roomId);
+            registerPeerHandlers();
+
+            peer.on('open', () => {
+                setStatus('Room created — waiting for peer', false);
+                signalLabel.textContent = 'Host ready';
+                pttBtn.disabled = true;
+                const url = new URL(window.location.href);
+                url.searchParams.set('room', roomId);
+                window.history.replaceState({}, '', url);
+                updateRoomLinkText();
+            });
+        }
+
+        function initializeRoomAsGuest(roomId) {
+            peer = new Peer();
+            registerPeerHandlers();
+
+            peer.on('open', () => {
+                setStatus('Joining room...', false);
+                signalLabel.textContent = 'Connecting';
+                conn = peer.connect(roomId);
+                setupConnection();
+            });
+        }
+
+        function registerPeerHandlers() {
             if (!peer) return;
 
             peer.on('connection', (incomingConn) => {
@@ -520,52 +542,48 @@
 
             peer.on('error', (error) => {
                 console.error('Peer error:', error);
-
                 if (error.type === 'unavailable-id') {
-                    // This means the room is already occupied; we join as guest instead.
-                    connectAsGuest(roomInput.value.trim());
+                    initializeRoomAsGuest(roomInput.value.trim());
                     return;
                 }
-
                 setStatus('Connection error', false);
                 signalLabel.textContent = 'Error';
-                alert('PeerJS error: ' + error.type);
             });
         }
 
-        function initializeRoomAsHost(roomId) {
-            roomHostMode = true;
-            peer = new Peer(roomId);
-            attachPeerEvents();
+        function setupConnection() {
+            if (!conn) return;
 
-            peer.on('open', () => {
-                setStatus('Room created — waiting for peer', false);
-                signalLabel.textContent = 'Host ready';
+            conn.on('open', () => {
+                isConnected = true;
+                setStatus('Room connected', true);
+                signalLabel.textContent = 'Live';
+                pttBtn.disabled = false;
+                setMicEnabled(false);
+
+                try {
+                    const call = peer.call(conn.peer, localStream);
+                    call.on('stream', (stream) => {
+                        remoteAudio.srcObject = stream;
+                        remoteAudio.play().catch(() => {});
+                    });
+                } catch (error) {
+                    console.log('Call setup error:', error);
+                }
+            });
+
+            conn.on('close', () => {
+                isConnected = false;
+                setStatus('Connection closed', false);
+                signalLabel.textContent = 'Closed';
                 pttBtn.disabled = true;
-                updateRoomLinkText();
-                const url = new URL(window.location.href);
-                url.searchParams.set('room', roomId);
-                window.history.replaceState({}, '', url);
-            });
-        }
-
-        function connectAsGuest(roomId) {
-            roomHostMode = false;
-            peer = new Peer();
-            attachPeerEvents();
-
-            peer.on('open', () => {
-                setStatus('Joining room...', false);
-                signalLabel.textContent = 'Connecting';
-                conn = peer.connect(roomId);
-                setupConnection();
             });
         }
 
         function connectRoom() {
             const roomId = roomInput.value.trim();
             if (!roomId) {
-                alert('Please enter a valid room name.');
+                alert('Please enter a room name.');
                 return;
             }
 
@@ -580,12 +598,8 @@
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then((stream) => {
                     localStream = stream;
-                    setMicEnabled(true);
+                    setMicEnabled(false);
                     startMeter();
-
-                    // Important: PeerJS does not create a room automatically.
-                    // We try to create the room as a host using the room ID.
-                    // If that ID is already taken, this client becomes a guest.
                     initializeRoomAsHost(roomId);
                 })
                 .catch((error) => {
@@ -596,47 +610,23 @@
                 });
         }
 
-        function setupConnection() {
-            if (!conn) return;
-
-            conn.on('open', () => {
-                isConnected = true;
-                setStatus('Room connected', true);
-                signalLabel.textContent = 'Live';
-                pttBtn.disabled = false;
-                updateRoomLinkText();
-
-                try {
-                    const call = peer.call(conn.peer, localStream);
-                    call.on('stream', (stream) => {
-                        remoteAudio.srcObject = stream;
-                        remoteAudio.play().catch(() => {});
-                    });
-                } catch (e) {
-                    console.log('Call started or peer unavailable', e);
-                }
-            });
-
-            conn.on('close', () => {
-                isConnected = false;
-                setStatus('Connection closed', false);
-                signalLabel.textContent = 'Closed';
-                pttBtn.disabled = true;
-            });
-        }
-
         function startTalk() {
             if (!isConnected || !localStream) return;
-            if (localStream.getAudioTracks().length === 0) return;
-            localStream.getAudioTracks()[0].enabled = true;
+            const track = localStream.getAudioTracks()[0];
+            if (!track) return;
+
+            track.enabled = true;
             pttBtn.classList.add('active');
             pttBtn.textContent = 'Talking...';
             signalLabel.textContent = 'Transmitting';
         }
 
         function stopTalk() {
-            if (!localStream || !localStream.getAudioTracks().length) return;
-            localStream.getAudioTracks()[0].enabled = false;
+            if (!localStream) return;
+            const track = localStream.getAudioTracks()[0];
+            if (!track) return;
+
+            track.enabled = false;
             pttBtn.classList.remove('active');
             pttBtn.textContent = 'Hold to Talk';
             signalLabel.textContent = isConnected ? 'Live' : 'Standby';
@@ -654,11 +644,11 @@
             startTalk();
         }, { passive: false });
 
-        pttBtn.addEventListener('touchend', () => stopTalk());
+        pttBtn.addEventListener('touchend', stopTalk);
 
         muteBtn.addEventListener('click', () => {
             if (!localStream) {
-                alert('Enable microphone access first.');
+                alert('Allow microphone access first.');
                 return;
             }
 
@@ -668,8 +658,9 @@
             const nextState = !track.enabled;
             track.enabled = nextState;
             muteBtn.textContent = nextState ? 'Mute mic' : 'Unmute mic';
-            if (nextState && isConnected) signalLabel.textContent = 'Live';
-            else if (isConnected) signalLabel.textContent = 'Muted';
+            if (isConnected) {
+                signalLabel.textContent = nextState ? 'Live' : 'Muted';
+            }
         });
 
         copyBtn.addEventListener('click', async () => {
