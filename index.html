@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>वेब वॉकी-टॉकी (Web Walkie-Talkie)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+        }
+        input {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+        }
+        button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-connect { background: #0084ff; color: white; }
+        .btn-ptt {
+            background: #ff3b30;
+            color: white;
+            font-size: 20px;
+            height: 120px;
+            border-radius: 60px;
+            margin-top: 20px;
+            box-shadow: 0 6px 15px rgba(255,59,48,0.4);
+        }
+        .btn-ptt.active { background: #34c759; }
+        #status {
+            margin: 15px 0;
+            font-weight: bold;
+            color: #ffa500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎙️ वेब वॉकी-टॉकी</h2>
+    <div id="status">स्थिति: डिस्कनेक्टेड</div>
+
+    <input type="text" id="roomId" placeholder="रूम आईडी (जैसे: my-room-123)">
+    <button class="btn-connect" onclick="connectRoom()">कनेक्ट करें</button>
+
+    <hr style="border-color: #333; margin: 20px 0;">
+
+    <button id="pttBtn" class="btn-ptt" disabled onmousedown="startTalk()" onmouseup="stopTalk()" ontouchstart="startTalk()" ontouchend="stopTalk()">
+        बोलने के लिए दबाएं रखे<br><small>(Push To Talk)</small>
+    </button>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script>
+    let peer;
+    let conn;
+    let localStream;
+    let remoteAudio = new Audio();
+    const statusDiv = document.getElementById('status');
+    const pttBtn = document.getElementById('pttBtn');
+    let isConnected = false;
+
+    async function connectRoom() {
+        const roomId = document.getElementById('roomId').value.trim();
+        if (!roomId) {
+            alert('कृपया रूम आईडी दर्ज करें!');
+            return;
+        }
+
+        statusDiv.innerText = "माइक्रोफ़ोन अनुमति ली जा रही है...";
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch (err) {
+            alert("माइक्रोफ़ोन एक्सेस नहीं मिला: " + err);
+            return;
+        }
+
+        statusDiv.innerText = "कनेक्ट हो रहा है...";
+
+        peer = new Peer();
+
+        peer.on('open', (id) => {
+            connectToPeer(roomId);
+        });
+
+        peer.on('connection', (incomingConn) => {
+            conn = incomingConn;
+            setupConnection();
+        });
+
+        peer.on('error', (err) => {
+            console.error(err);
+            statusDiv.innerText = "एरर: " + err.type;
+        });
+    }
+
+    function connectToPeer(roomId) {
+        conn = peer.connect(roomId);
+        setupConnection();
+
+        peer.on('call', (call) => {
+            call.answer(localStream);
+            call.on('stream', (stream) => {
+                remoteAudio.srcObject = stream;
+                remoteAudio.play();
+            });
+        });
+    }
+
+    function setupConnection() {
+        conn.on('open', () => {
+            isConnected = true;
+            statusDiv.innerText = "🟢 कनेक्टेड! बात करने के लिए बटन दबाएं।";
+            statusDiv.style.color = "#34c759";
+            pttBtn.disabled = false;
+
+            let call = peer.call(conn.peer, localStream);
+            call.on('stream', (stream) => {
+                remoteAudio.srcObject = stream;
+                remoteAudio.play();
+            });
+        });
+
+        conn.on('close', () => {
+            isConnected = false;
+            statusDiv.innerText = "🔴 डिस्कनेक्ट हो गया।";
+            pttBtn.disabled = true;
+        });
+    }
+
+    function startTalk() {
+        if (!isConnected || !localStream) return;
+        localStream.getAudioTracks()[0].enabled = true;
+        pttBtn.classList.add('active');
+        pttBtn.innerText = "बोल रहे हैं... 🎙️";
+    }
+
+    function stopTalk() {
+        if (!isConnected || !localStream) return;
+        localStream.getAudioTracks()[0].enabled = false;
+        pttBtn.classList.remove('active');
+        pttBtn.innerText = "बोलने के लिए दबाएं रखें\n(Push To Talk)";
+    }
+</script>
+
+</body>
+</html>
