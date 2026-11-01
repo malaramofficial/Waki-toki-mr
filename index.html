@@ -23,9 +23,7 @@
             --shadow: 0 20px 60px rgba(15, 23, 42, 0.6);
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         html, body {
             margin: 0;
@@ -60,9 +58,7 @@
             backdrop-filter: blur(12px);
         }
 
-        .main-panel {
-            padding: 28px;
-        }
+        .main-panel { padding: 28px; }
 
         .hero {
             display: flex;
@@ -121,9 +117,7 @@
             box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.12);
         }
 
-        .status-connected {
-            color: #dcfce7;
-        }
+        .status-connected { color: #dcfce7; }
 
         .controls {
             display: grid;
@@ -174,9 +168,7 @@
             transition: transform 0.2s ease, opacity 0.2s ease;
         }
 
-        .action:hover {
-            transform: translateY(-1px);
-        }
+        .action:hover { transform: translateY(-1px); }
 
         .action.primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-2));
@@ -185,12 +177,6 @@
 
         .action.secondary {
             background: rgba(148, 163, 184, 0.08);
-            color: var(--text);
-            border: 1px solid var(--line);
-        }
-
-        .action.ghost {
-            background: transparent;
             color: var(--text);
             border: 1px solid var(--line);
         }
@@ -219,9 +205,7 @@
             gap: 8px;
         }
 
-        .signal strong {
-            color: var(--text);
-        }
+        .signal strong { color: var(--text); }
 
         .meter {
             display: flex;
@@ -304,10 +288,7 @@
             padding: 18px;
         }
 
-        .info-card h3 {
-            margin: 0 0 10px;
-            font-size: 1.06rem;
-        }
+        .info-card h3 { margin: 0 0 10px; font-size: 1.06rem; }
 
         .info-card p, .info-card li {
             color: var(--muted);
@@ -345,27 +326,11 @@
             margin-top: 10px;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
         @media (max-width: 840px) {
-            .app-shell {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                grid-template-columns: 1fr;
-            }
-
-            .hero {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .talk-controls {
-                flex-direction: column;
-            }
+            .app-shell { grid-template-columns: 1fr; }
+            .controls { grid-template-columns: 1fr; }
+            .hero { flex-direction: column; align-items: flex-start; }
+            .talk-controls { flex-direction: column; }
         }
     </style>
 </head>
@@ -429,9 +394,7 @@
         <aside class="panel side-panel">
             <div class="info-card">
                 <h3>Professional Walkie Talkie</h3>
-                <p>
-                    Fast, low-latency voice communication over the browser. No app install required.
-                </p>
+                <p>Fast, low-latency voice communication over the browser. No app install required.</p>
                 <ul class="feature-list">
                     <li>Instant room-based connection</li>
                     <li>Push-to-talk interaction</li>
@@ -442,9 +405,7 @@
 
             <div class="info-card">
                 <h3>How it works</h3>
-                <p>
-                    Create or join a room, grant microphone access, then hold the PTT button to transmit audio to the connected peer.
-                </p>
+                <p>Create a room, share the link, and connect a second browser to the same room ID.</p>
                 <div class="tiny" id="roomLinkText">Room link: not created yet</div>
             </div>
         </aside>
@@ -468,10 +429,10 @@
         let localStream = null;
         let remoteAudio = new Audio();
         let isConnected = false;
-        let micMuted = false;
         let audioContext = null;
         let analyser = null;
         let animationId = null;
+        let roomHostMode = false;
 
         const defaultRoom = "waki-team-demo";
 
@@ -483,11 +444,8 @@
         function hydrateRoomFromUrl() {
             const params = new URLSearchParams(window.location.search);
             const room = params.get('room');
-            if (room) {
-                roomInput.value = room;
-            } else {
-                roomInput.value = defaultRoom;
-            }
+            if (room) roomInput.value = room;
+            else roomInput.value = defaultRoom;
         }
 
         function buildRoomLink() {
@@ -541,7 +499,67 @@
             if (!localStream || !localStream.getAudioTracks().length) return;
             localStream.getAudioTracks()[0].enabled = enabled;
             muteBtn.textContent = enabled ? 'Mute mic' : 'Unmute mic';
-            micMuted = !enabled;
+        }
+
+        function attachPeerEvents() {
+            if (!peer) return;
+
+            peer.on('connection', (incomingConn) => {
+                conn = incomingConn;
+                setupConnection();
+            });
+
+            peer.on('call', (call) => {
+                if (!localStream) return;
+                call.answer(localStream);
+                call.on('stream', (stream) => {
+                    remoteAudio.srcObject = stream;
+                    remoteAudio.play().catch(() => {});
+                });
+            });
+
+            peer.on('error', (error) => {
+                console.error('Peer error:', error);
+
+                if (error.type === 'unavailable-id') {
+                    // This means the room is already occupied; we join as guest instead.
+                    connectAsGuest(roomInput.value.trim());
+                    return;
+                }
+
+                setStatus('Connection error', false);
+                signalLabel.textContent = 'Error';
+                alert('PeerJS error: ' + error.type);
+            });
+        }
+
+        function initializeRoomAsHost(roomId) {
+            roomHostMode = true;
+            peer = new Peer(roomId);
+            attachPeerEvents();
+
+            peer.on('open', () => {
+                setStatus('Room created — waiting for peer', false);
+                signalLabel.textContent = 'Host ready';
+                pttBtn.disabled = true;
+                updateRoomLinkText();
+                const url = new URL(window.location.href);
+                url.searchParams.set('room', roomId);
+                window.history.replaceState({}, '', url);
+            });
+        }
+
+        function connectAsGuest(roomId) {
+            roomHostMode = false;
+            peer = new Peer();
+            attachPeerEvents();
+
+            peer.on('open', () => {
+                setStatus('Joining room...', false);
+                signalLabel.textContent = 'Connecting';
+                conn = peer.connect(roomId);
+                setupConnection();
+            });
         }
 
         function connectRoom() {
@@ -563,40 +581,12 @@
                 .then((stream) => {
                     localStream = stream;
                     setMicEnabled(true);
-                    if (audioContext) {
-                        startMeter();
-                    }
                     startMeter();
-                    setStatus('Connecting to room...');
-                    signalLabel.textContent = 'Connecting';
 
-                    peer = new Peer();
-
-                    peer.on('open', () => {
-                        const target = roomId;
-                        conn = peer.connect(target);
-                        setupConnection();
-                        signalLabel.textContent = 'Connected';
-                    });
-
-                    peer.on('connection', (incomingConn) => {
-                        conn = incomingConn;
-                        setupConnection();
-                    });
-
-                    peer.on('call', (call) => {
-                        call.answer(localStream);
-                        call.on('stream', (stream) => {
-                            remoteAudio.srcObject = stream;
-                            remoteAudio.play().catch(() => {});
-                        });
-                    });
-
-                    peer.on('error', (error) => {
-                        console.error(error);
-                        setStatus('Connection error', false);
-                        signalLabel.textContent = 'Error';
-                    });
+                    // Important: PeerJS does not create a room automatically.
+                    // We try to create the room as a host using the room ID.
+                    // If that ID is already taken, this client becomes a guest.
+                    initializeRoomAsHost(roomId);
                 })
                 .catch((error) => {
                     console.error(error);
@@ -615,9 +605,6 @@
                 signalLabel.textContent = 'Live';
                 pttBtn.disabled = false;
                 updateRoomLinkText();
-                const url = new URL(window.location.href);
-                url.searchParams.set('room', roomInput.value.trim());
-                window.history.replaceState({}, '', url);
 
                 try {
                     const call = peer.call(conn.peer, localStream);
@@ -626,7 +613,7 @@
                         remoteAudio.play().catch(() => {});
                     });
                 } catch (e) {
-                    console.log('Call already started or peer unavailable', e);
+                    console.log('Call started or peer unavailable', e);
                 }
             });
 
@@ -681,20 +668,15 @@
             const nextState = !track.enabled;
             track.enabled = nextState;
             muteBtn.textContent = nextState ? 'Mute mic' : 'Unmute mic';
-            if (nextState && isConnected) {
-                signalLabel.textContent = 'Live';
-            } else if (isConnected) {
-                signalLabel.textContent = 'Muted';
-            }
+            if (nextState && isConnected) signalLabel.textContent = 'Live';
+            else if (isConnected) signalLabel.textContent = 'Muted';
         });
 
         copyBtn.addEventListener('click', async () => {
             try {
                 await navigator.clipboard.writeText(buildRoomLink());
                 copyBtn.textContent = 'Link Copied';
-                setTimeout(() => {
-                    copyBtn.textContent = 'Copy Link';
-                }, 1300);
+                setTimeout(() => { copyBtn.textContent = 'Copy Link'; }, 1300);
             } catch (error) {
                 alert('Copy failed. Please copy the room link manually.');
             }
