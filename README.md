@@ -46,8 +46,9 @@ These starter rules let authenticated anonymous users read room presence and cre
 
 - Serve the repository over **HTTPS** (or localhost during development). Camera and microphone access are blocked on ordinary insecure HTTP origins.
 - GitHub Pages can host the static page after Firebase is configured.
-- Open the deployed page on each device, enter a display name and the same room code, then select **रूम बनाएं / जुड़ें**.
-- Share the invite link; it contains the room code in the URL.
+- Open the deployed page once: it automatically creates a new room, assigns a temporary `Guest-XXXX` name, and starts joining.
+- The host taps **Invite** and shares the generated link. Anyone opening that exact link automatically joins the same room; nobody needs to type a name or room ID.
+- The browser still asks each participant to allow camera/microphone access. If permission or connection setup fails, use the on-screen retry button.
 
 ## Important limitations before production
 
