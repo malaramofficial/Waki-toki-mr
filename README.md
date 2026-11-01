@@ -13,34 +13,34 @@ A responsive browser-based group video room with push-to-talk and an active-spea
 
 ## Firebase setup (required before joining a room)
 
-This repository intentionally does not contain a Firebase project's credentials. Configure your own Firebase project:
+### Current Firebase project
 
-1. Open [Firebase Console](https://console.firebase.google.com/) and create/select a project.
-2. Add a **Web app** in Project settings and copy its Firebase web configuration.
-3. In **Authentication → Sign-in method**, enable **Anonymous**.
-4. In **Realtime Database**, create a database and copy its exact database URL.
-5. In `index.html`, replace the six `YOUR_...` values in `firebaseConfig` with your web app values. Set `databaseURL` to the exact URL shown by Firebase (it may be in a regional location).
-6. In Realtime Database → Rules, use the rules below, then publish them:
+The app is currently configured to use the existing `voter-slip-machine` Firebase project. Its web configuration is already in `index.html`; the Firebase Web API key is a client-side identifier, not an admin credential. Do not put service-account keys or database secrets in this file.
+
+The app stores its presence under the separate `wakiTokiRooms/` path so it does not collide with the Voter Slip Machine's `rooms/` data.
+
+1. In [Firebase Console](https://console.firebase.google.com/), select `voter-slip-machine`.
+2. Open **Authentication → Sign-in method** and enable **Anonymous**.
+3. Confirm **Realtime Database** is enabled and that the database URL in `index.html` matches the URL shown in the console.
+4. Open **Realtime Database → Rules**. **Do not replace your entire existing rules file** because this Firebase project is also used by Voter Slip Machine. Merge the following `wakiTokiRooms` child into the existing top-level `rules` object, preserving all existing rules for other apps, then publish:
 
 ```json
-{
-  "rules": {
-    "rooms": {
-      "$roomId": {
-        ".read": "auth != null",
-        "participants": {
-          "$peerId": {
-            ".write": "auth != null && (newData.child('uid').val() === auth.uid || data.child('uid').val() === auth.uid)",
-            ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'id', 'name']) && newData.child('uid').val() === auth.uid)"
-          }
-        }
+"wakiTokiRooms": {
+  "$roomId": {
+    ".read": "auth != null",
+    "participants": {
+      "$peerId": {
+        ".write": "auth != null && (newData.child('uid').val() === auth.uid || data.child('uid').val() === auth.uid)",
+        ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'id', 'name']) && newData.child('uid').val() === auth.uid)"
       }
     }
   }
 }
 ```
 
-These rules let signed-in anonymous users read room presence and create/update/delete only their own participant record. They do not provide private-room invitations or end-to-end encryption. Treat room codes as discoverable identifiers, not as strong authentication.
+For example, the child belongs alongside your other top-level app paths inside `"rules": { ... }`; do not paste it as a replacement for the complete rules document. If your existing rules grant broader access at the root or at a parent path, those parent permissions can override these child restrictions, so review the combined rules carefully before publishing.
+
+These starter rules let authenticated anonymous users read room presence and create/update/delete only their own participant record. Room codes are not strong authentication, and these rules do not provide private-room invitations or end-to-end encryption.
 
 ## Run / deploy
 
@@ -52,9 +52,10 @@ These rules let signed-in anonymous users read room presence and create/update/d
 ## Important limitations before production
 
 - This is an early browser prototype, not a WhatsApp replacement. PeerJS's public cloud signaling server is used by default; it is convenient for testing but has no production SLA.
-- Media uses a peer-to-peer mesh. Every participant sends a separate stream to each other participant, so bandwidth and CPU use rise quickly. Keep test rooms small (about 2–4 people) until a proper SFU such as LiveKit is integrated.
+- Media uses a peer-to-peer mesh. Every participant sends a separate stream to each other participant, so bandwidth and CPU use rise quickly. Keep test rooms small (about 2–4 people) until a proper SFU such as LiveKit is integrated. Failed initial peer connections are retried a few times, but this is not a substitute for a TURN server or an SFU.
 - Some mobile networks and restrictive NAT/firewalls require a TURN relay. Add a trusted TURN service for reliable production connectivity.
 - Firebase room reads are available to any authenticated user under these simple rules. For private production rooms, add room access tokens/invitations, stronger validation, rate limits and abuse controls.
+- If camera permission is denied or the camera is unavailable, the app attempts to join audio-only (if microphone permission is granted).
 - The page currently supports video and push-to-talk. It does not yet include chat, call recording, screen sharing, end-to-end encryption, or native push notifications.
 
 ## Technology

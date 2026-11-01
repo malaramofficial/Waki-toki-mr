@@ -73,14 +73,14 @@ const firebaseConfig = {
 };
 
 const $ = id => document.getElementById(id);
-const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),unsubs:[],joined:false,talking:false,micMuted:false,cameraOff:false,joinBusy:false};
+const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),callRetries:new Map(),unsubs:[],joined:false,talking:false,micMuted:false,cameraOff:false,joinBusy:false,joinTimeout:null};
 const placeholder = Object.values(firebaseConfig).some(v => String(v).startsWith("YOUR_"));
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),3200);}
 function setConnection(text,live=false){$("connectionLabel").textContent=text;$("connectionDot").classList.toggle("live",live);}
 function safeRoom(value){return value.toLowerCase().trim().replace(/[^a-z0-9_-]/g,"-").replace(/-+/g,"-").slice(0,40);}
 function initials(name){return (name||"?").trim().split(/\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase()||"?";}
-function roomRef(){return ref(state.db,"rooms/"+state.room);}
-function participantRef(id){return ref(state.db,"rooms/"+state.room+"/participants/"+id);}
+function roomRef(){return ref(state.db,"wakiTokiRooms/"+state.room);}
+function participantRef(id){return ref(state.db,"wakiTokiRooms/"+state.room+"/participants/"+id);}
 function activeSpeakers(){return [...state.participants.values()].filter(p=>p.speaking).length;}
 function render(){
  const list=[...state.participants.values()].sort((a,b)=>(Number(b.speaking)-Number(a.speaking))||a.name.localeCompare(b.name));
@@ -103,15 +103,16 @@ function render(){
 }
 function updateLocalPresence(extra={}){if(!state.joined||!state.peerId)return updateLocalPresence.pending=extra;return update(participantRef(state.peerId),{...extra,updatedAt:serverTimestamp()}).catch(e=>console.warn("presence update",e));}
 function addRemote(id,data){const old=state.participants.get(id)||{};state.participants.set(id,{...old,...data,id,stream:old.stream||null});render();if(id!==state.peerId&&state.peer&&state.peer.open&&id>state.peerId)callPeer(id);}
-function removeRemote(id){const call=state.calls.get(id);if(call){call.close();state.calls.delete(id);}state.participants.delete(id);render();}
+function removeRemote(id){const retry=state.callRetries.get(id);if(retry){clearTimeout(retry);state.callRetries.delete(id);}const call=state.calls.get(id);if(call){call.close();state.calls.delete(id);}state.participants.delete(id);render();}
 function attachCall(call){if(state.calls.has(call.peer))return;state.calls.set(call.peer,call);call.on("stream",stream=>{const p=state.participants.get(call.peer)||{id:call.peer,name:"सदस्य"};p.stream=stream;state.participants.set(call.peer,p);render();});call.on("close",()=>{state.calls.delete(call.peer);const p=state.participants.get(call.peer);if(p){p.stream=null;render();}});call.on("error",err=>console.warn("Peer call",err));}
-function callPeer(id){if(state.calls.has(id)||!state.localStream||id===state.peerId)return;try{const call=state.peer.call(id,state.localStream,{metadata:{room:state.room}});if(call)attachCall(call);}catch(e){console.warn("callPeer",e);}}
-async function startMedia(){state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});state.localStream.getAudioTracks().forEach(t=>t.enabled=false);return state.localStream;}
+function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!state.peer||!state.peer.open||id===state.peerId)return;try{const call=state.peer.call(id,state.localStream,{metadata:{room:state.room}});if(call){attachCall(call);call.on("error",err=>{console.warn("Peer call",err);state.calls.delete(id);if(err.type==="peer-unavailable"&&attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}});}}catch(e){console.warn("callPeer",e);if(attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}}}
+async function startMedia(){try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});}catch(videoError){console.warn("Camera unavailable; retrying audio-only",videoError);state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});state.cameraOff=true;toast("कैमरा उपलब्ध नहीं है — आप ऑडियो से जुड़ रहे हैं।");}state.localStream.getAudioTracks().forEach(t=>t.enabled=false);return state.localStream;}
 function subscribeRoom(){
- const base="rooms/"+state.room+"/participants";
- state.unsubs.push(onChildAdded(ref(state.db,base),snap=>{const d=snap.val();if(d&&snap.key!==state.peerId)addRemote(snap.key,d);}));
- state.unsubs.push(onChildChanged(ref(state.db,base),snap=>{const d=snap.val();if(d)addRemote(snap.key,d);}));
- state.unsubs.push(onChildRemoved(ref(state.db,base),snap=>removeRemote(snap.key)));
+ const base="wakiTokiRooms/"+state.room+"/participants";
+ const onCancel=error=>{console.error("Room subscription",error);toast("रूम सूची पढ़ने की अनुमति नहीं मिली। Firebase Database Rules जाँचें।");};
+ state.unsubs.push(onChildAdded(ref(state.db,base),snap=>{const d=snap.val();if(d&&snap.key!==state.peerId)addRemote(snap.key,d);},onCancel));
+ state.unsubs.push(onChildChanged(ref(state.db,base),snap=>{const d=snap.val();if(d)addRemote(snap.key,d);},onCancel));
+ state.unsubs.push(onChildRemoved(ref(state.db,base),snap=>removeRemote(snap.key),onCancel));
 }
 async function joinRoom(){
  if(state.joinBusy||state.joined)return;
@@ -119,7 +120,7 @@ async function joinRoom(){
  if(!name){toast("पहले अपना नाम लिखें।");$("displayName").focus();return;}
  if(!room){toast("रूम कोड दर्ज करें।");$("roomInput").focus();return;}
  if(placeholder){$("configModal").classList.add("show");return;}
- if(!navigator.mediaDevices?.getUserMedia){toast("कैमरा/माइक के लिए HTTPS वेबसाइट खोलें।");return;}
+ if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){toast("कैमरा/माइक के लिए HTTPS वेबसाइट खोलें।");return;}
  state.joinBusy=true;$("joinBtn").disabled=true;$("joinBtn").textContent="कनेक्ट हो रहा है…";setConnection("Connecting…");
  try{
   state.name=name;state.room=room;
@@ -127,35 +128,37 @@ async function joinRoom(){
   const cred=await signInAnonymously(state.auth);state.uid=cred.user.uid;
   await startMedia();
   state.peer=new Peer(undefined,{debug:1});
+  state.joinTimeout=setTimeout(async()=>{if(!state.joined&&state.peer){toast("कनेक्शन में समय लग रहा है। कृपया दोबारा कोशिश करें।");await leaveRoom();}},20000);
   state.peer.on("open",async id=>{
    try{
     state.peerId=id;
-    const existing=await new Promise(resolve=>onValue(ref(state.db,"rooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},{onlyOnce:true}));
+    subscribeRoom();
+    const existing=await new Promise((resolve,reject)=>onValue(ref(state.db,"wakiTokiRooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},error=>reject(error),{onlyOnce:true}));
     if(Object.keys(existing).length>=12){throw new Error("इस रूम में अधिकतम 12 सदस्य जुड़ सकते हैं।");}
     const record={id,name,uid:state.uid,speaking:false,cameraOff:false,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};
-    await set(participantRef(id),record);
     await onDisconnect(participantRef(id)).remove();
-    state.participants.set(id,{...record,stream:state.localStream});state.joined=true;subscribeRoom();
+    await set(participantRef(id),record);
+    state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
     $("joinCard").classList.add("hidden");$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
-    $("shareTop").disabled=false;$("cameraBtn").disabled=false;$("muteBtn").disabled=false;$("pttBtn").disabled=false;$("leaveBtn").disabled=false;
-    setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");
-   }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();}
+    $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("muteBtn").disabled=false;$("pttBtn").disabled=false;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
+    setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';
+   }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}
   });
   state.peer.on("call",call=>{call.answer(state.localStream);attachCall(call);});
   state.peer.on("error",err=>{console.error(err);if(err.type==="peer-unavailable")return;toast("कनेक्शन समस्या: "+err.type);});
   state.peer.on("disconnected",()=>{setConnection("Reconnecting…");if(state.peer&&!state.peer.destroyed)state.peer.reconnect();});
-  state.peer.on("close",()=>setConnection("Disconnected"));
+  state.peer.on("close",()=>{setConnection("Disconnected");if(!state.joined){state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}});
  }catch(e){console.error(e);toast(e.message||"कनेक्ट नहीं हो सका।");if(state.localStream)state.localStream.getTracks().forEach(t=>t.stop());}
- finally{state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}
+ finally{if(!state.peer||state.peer.open){state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';}}
 }
 function startTalk(){if(!state.joined||state.talking||state.micMuted)return;state.talking=true;state.localStream.getAudioTracks().forEach(t=>t.enabled=true);$("pttBtn").classList.add("active");updateLocalPresence({speaking:true});render();}
 function stopTalk(){if(!state.joined||!state.talking)return;state.talking=false;state.localStream.getAudioTracks().forEach(t=>t.enabled=false);$("pttBtn").classList.remove("active");updateLocalPresence({speaking:false});render();}
 function toggleMic(){if(!state.joined)return;state.micMuted=!state.micMuted;if(state.micMuted)stopTalk();$("muteBtn").classList.toggle("off",state.micMuted);$("muteBtn").querySelector("span").textContent=state.micMuted?"Muted":"Mic";if(!state.micMuted&&state.talking)startTalk();toast(state.micMuted?"माइक्रोफोन म्यूट है":"माइक्रोफोन तैयार है — बोलने के लिए दबाकर रखें");}
 function toggleCamera(){if(!state.joined)return;state.cameraOff=!state.cameraOff;state.localStream.getVideoTracks().forEach(t=>t.enabled=!state.cameraOff);$("cameraBtn").classList.toggle("off",state.cameraOff);$("cameraBtn").querySelector("span").textContent=state.cameraOff?"Camera off":"Camera";updateLocalPresence({cameraOff:state.cameraOff});render();}
 async function leaveRoom(){
- stopTalk();state.joined=false;
- state.unsubs.forEach(fn=>{try{fn();}catch(e){}});state.unsubs=[];
+ if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}stopTalk();state.joined=false;
+ state.unsubs.forEach(fn=>{try{fn();}catch(e){}});state.unsubs=[];for(const timer of state.callRetries.values())clearTimeout(timer);state.callRetries.clear();
  for(const call of state.calls.values())try{call.close();}catch(e){}state.calls.clear();
  if(state.peer){try{state.peer.destroy();}catch(e){}state.peer=null;}
  if(state.peerId&&state.db)try{await remove(participantRef(state.peerId));}catch(e){}
@@ -165,11 +168,11 @@ async function leaveRoom(){
  ["cameraBtn","muteBtn","pttBtn","leaveBtn"].forEach(id=>$(id).disabled=true);
  ["cameraBtn","muteBtn","pttBtn"].forEach(id=>$(id).classList.remove("off","active"));
  $("cameraBtn").querySelector("span").textContent="Camera";$("muteBtn").querySelector("span").textContent="Mic";
- setConnection("Not connected");render();toast("आप रूम से बाहर आ गए हैं।");
+ setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").innerHTML='रूम बनाएं / जुड़ें <span>→</span>';render();toast("आप रूम से बाहर आ गए हैं।");
 }
 async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){$("roomInput").value=state.room;toast("रूम कोड: "+state.room);}}
 $("joinBtn").addEventListener("click",joinRoom);$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("muteBtn").addEventListener("click",toggleMic);$("shareTop").addEventListener("click",invite);
-$("pttBtn").addEventListener("pointerdown",e=>{e.preventDefault();if(!state.micMuted)startTalk();});["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(ev=>$("pttBtn").addEventListener(ev,e=>{e.preventDefault();stopTalk();}));
+$("pttBtn").addEventListener("pointerdown",e=>{e.preventDefault();try{$("pttBtn").setPointerCapture(e.pointerId);}catch(_){}if(!state.micMuted)startTalk();});["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(ev=>$("pttBtn").addEventListener(ev,e=>{e.preventDefault();stopTalk();}));
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopTalk();});
 $("roomInput").addEventListener("keydown",e=>{if(e.key==="Enter")joinRoom();});
 $("closeConfig").addEventListener("click",()=>$("configModal").classList.remove("show"));
