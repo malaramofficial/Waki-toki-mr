@@ -62,13 +62,14 @@ import { getDatabase, ref, set, update, onValue, onChildAdded, onChildChanged, o
 
 /* Firebase Console > Project settings > Your apps > SDK setup > Config */
 const firebaseConfig = {
- apiKey: "YOUR_FIREBASE_API_KEY",
- authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
- databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
- projectId: "YOUR_PROJECT_ID",
- storageBucket: "YOUR_PROJECT_ID.appspot.com",
- messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
- appId: "YOUR_FIREBASE_APP_ID"
+ apiKey: "YOUR_FIREBASE_API_KEY", // अपनी Firebase Web API key यहाँ डालें
+ authDomain: "voter-slip-machine.firebaseapp.com",
+ databaseURL: "https://voter-slip-machine-default-rtdb.firebaseio.com",
+ projectId: "voter-slip-machine",
+ storageBucket: "voter-slip-machine.firebasestorage.app",
+ messagingSenderId: "60425502661",
+ appId: "1:60425502661:web:6852d55e54f66cab14d5ac",
+ measurementId: "G-K0TH95KRHX"
 };
 
 const $ = id => document.getElementById(id);
