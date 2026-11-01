@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#080d18">
-<meta name="description" content="Waki Toki — private group video calling and push-to-talk rooms.">
-<title>Waki Toki — Group Video & Push to Talk</title>
+<meta name="description" content="Waki Toki — group video calling without microphone access.">
+<title>Waki Toki — Group Video Call</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,20 +22,17 @@
  <div class="top-actions"><div class="pill"><span class="dot" id="connectionDot"></span><span id="connectionLabel">Not connected</span></div><button class="btn secondary" id="shareTop" disabled>↗ <span>Invite</span></button></div>
 </header>
 <section class="hero">
- <div><div class="eyebrow">GROUP VIDEO · PUSH TO TALK</div><h1>हर आवाज़ को मिले अपनी जगह।</h1><p>लिंक खोलते ही कॉल में जुड़ें — बिना रूम कोड और बिना नाम लिखे।</p></div>
+ <div><div class="eyebrow">GROUP VIDEO CALL</div><h1>एक टैप में वीडियो कॉल।</h1><p>लिंक खोलते ही कॉल में जुड़ें — बिना रूम कोड और बिना नाम लिखे।</p></div>
  <div class="room-meta" id="roomMeta"><div class="room-chip">ROOM <b id="roomCodeLabel">—</b></div><div class="room-chip" id="participantCountTop">0 participants</div></div>
 </section>
 <main class="layout">
  <section class="main-panel">
   <div class="stage-head"><strong>LIVE ROOM</strong><span id="stageStatus">रूम में शामिल होने की प्रतीक्षा है</span></div>
-  <div class="stage" id="stage" data-active="0"><div class="empty" id="emptyState"><div><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h3>आपका कॉल रूम तैयार है</h3><p>कॉल अपने आप शुरू हो रही है। कैमरा और माइक्रोफोन की अनुमति दें।</p></div></div></div>
+  <div class="stage" id="stage" data-active="0"><div class="empty" id="emptyState"><div><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h3>आपका कॉल रूम तैयार है</h3><p>कॉल अपने आप शुरू हो रही है। केवल कैमरे की अनुमति दें।</p></div></div></div>
   <div class="call-controls">
    <button class="control" id="cameraBtn" disabled aria-label="Toggle camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Camera</span></button>
-   <button class="control" id="pttBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span><b>Hold to Talk</b><small>दबाकर बोलें</small></span></button>
-   <button class="control" id="muteBtn" disabled aria-label="Toggle microphone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span>Mic</span></button>
    <button class="control leave" id="leaveBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 8 6 12l4 4M6 12h12"/><path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg><span>Leave</span></button>
   </div>
-  <div class="hint">Push-to-talk के लिए बटन दबाकर रखें · छोड़ते ही माइक म्यूट हो जाएगा</div>
  </section>
  <aside class="side-panel">
   <div class="side-title">रूम कंट्रोल <span class="count" id="memberCount">0 / 12</span></div>
@@ -45,7 +42,7 @@
   </div>
   <div class="side-title">सदस्य <span class="count" id="memberCountLabel">0 online</span></div>
   <div class="member-list" id="memberList"><div class="member"><div class="member-avatar">?</div><div class="member-info"><strong>अभी कोई नहीं</strong><small>आपके जुड़ने की प्रतीक्षा</small></div></div></div>
-  <div class="notice">🔒 एक ही Invite Link खोलने वाले सभी लोग उसी कॉल में जुड़ेंगे। बेहतर कॉल क्वालिटी के लिए स्थिर इंटरनेट और कैमरा/माइक अनुमति दें।</div>
+  <div class="notice">🔒 एक ही Invite Link खोलने वाले सभी लोग उसी वीडियो कॉल में जुड़ेंगे। इस ऐप में माइक्रोफोन का उपयोग नहीं होता।</div>
  </aside>
 </main>
 <footer class="footer"><span>Waki Toki · A smarter way to talk</span><span>Made with care by Mala Ram Godara</span></footer>
@@ -71,7 +68,7 @@ const firebaseConfig = {
 };
 
 const $ = id => document.getElementById(id);
-const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),callRetries:new Map(),unsubs:[],joined:false,talking:false,micMuted:false,cameraOff:false,joinBusy:false,joinTimeout:null};
+const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),callRetries:new Map(),unsubs:[],joined:false,cameraOff:false,joinBusy:false,joinTimeout:null};
 const placeholder = Object.values(firebaseConfig).some(v => String(v).startsWith("YOUR_"));
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),3200);}
 function setConnection(text,live=false){$("connectionLabel").textContent=text;$("connectionDot").classList.toggle("live",live);}
@@ -82,7 +79,7 @@ function participantRef(id){return ref(state.db,"wakiTokiRooms/"+state.room+"/pa
 function activeSpeakers(){return [...state.participants.values()].filter(p=>p.speaking).length;}
 function render(){
  const list=[...state.participants.values()].sort((a,b)=>(Number(b.speaking)-Number(a.speaking))||a.name.localeCompare(b.name));
- const active=list.filter(p=>p.speaking).length;
+ const active=0;
  const stage=$("stage");stage.dataset.active=String(Math.min(active,4));stage.innerHTML="";
  if(!list.length){stage.innerHTML='<div class="empty"><div><div class="empty-icon">⌁</div><h3>रूम में कोई सदस्य नहीं</h3><p>अपना रूम कोड साझा करें। साथी जुड़ते ही यहाँ दिखाई देंगे।</p></div></div>';}
  list.forEach(p=>{
@@ -90,21 +87,21 @@ function render(){
   const avatar=document.createElement("div");avatar.className="avatar";const letter=document.createElement("span");letter.textContent=initials(p.name);avatar.appendChild(letter);card.appendChild(avatar);
   if(p.stream){const video=document.createElement("video");video.autoplay=true;video.playsInline=true;video.muted=p.id===state.peerId;video.srcObject=p.stream;card.appendChild(video);video.play().catch(()=>{});}
   const shade=document.createElement("div");shade.className="shade";card.appendChild(shade);
-  const name=document.createElement("div");name.className="person-name";name.textContent=p.name+(p.id===state.peerId?" (आप)":"");if(p.speaking){const bars=document.createElement("span");bars.className="audio-bars";bars.innerHTML="<i></i><i></i><i></i>";name.appendChild(bars);}card.appendChild(name);
-  const badge=document.createElement("div");badge.className="person-state";badge.textContent=p.speaking?"● बोल रहे हैं":(p.cameraOff?"कैमरा बंद":"● सुन रहे हैं");card.appendChild(badge);
+  const name=document.createElement("div");name.className="person-name";name.textContent=p.name+(p.id===state.peerId?" (आप)":"");card.appendChild(name);
+  const badge=document.createElement("div");badge.className="person-state";badge.textContent=p.cameraOff?"कैमरा बंद":"वीडियो ऑनलाइन";card.appendChild(badge);
   stage.appendChild(card);
  });
  $("stageStatus").textContent=active?active+" सदस्य बोल रहे हैं":(list.length?list.length+" सदस्य जुड़े हैं":"रूम में शामिल होने की प्रतीक्षा है");
  $("memberCount").textContent=list.length+" / 12";$("memberCountLabel").textContent=list.length+" online";$("participantCountTop").textContent=list.length+" participants";
  $("memberList").innerHTML="";
- list.forEach(p=>{const row=document.createElement("div");row.className="member";const av=document.createElement("div");av.className="member-avatar";av.textContent=initials(p.name);const info=document.createElement("div");info.className="member-info";const strong=document.createElement("strong");strong.textContent=p.name+(p.id===state.peerId?" (आप)":"");const small=document.createElement("small");small.textContent=p.speaking?"बोल रहे हैं":(p.cameraOff?"कैमरा बंद":"ऑनलाइन");info.append(strong,small);const mic=document.createElement("span");mic.className="member-mic";mic.textContent=p.speaking?"🎙️":"●";row.append(av,info,mic);$("memberList").appendChild(row);});
+ list.forEach(p=>{const row=document.createElement("div");row.className="member";const av=document.createElement("div");av.className="member-avatar";av.textContent=initials(p.name);const info=document.createElement("div");info.className="member-info";const strong=document.createElement("strong");strong.textContent=p.name+(p.id===state.peerId?" (आप)":"");const small=document.createElement("small");small.textContent=p.cameraOff?"कैमरा बंद":"ऑनलाइन";info.append(strong,small);const mic=document.createElement("span");mic.className="member-mic";mic.textContent="●";row.append(av,info,mic);$("memberList").appendChild(row);});
 }
 function updateLocalPresence(extra={}){if(!state.joined||!state.peerId)return updateLocalPresence.pending=extra;return update(participantRef(state.peerId),{...extra,updatedAt:serverTimestamp()}).catch(e=>console.warn("presence update",e));}
 function addRemote(id,data){const old=state.participants.get(id)||{};state.participants.set(id,{...old,...data,id,stream:old.stream||null});render();if(id!==state.peerId&&state.peer&&state.peer.open&&id>state.peerId)callPeer(id);}
 function removeRemote(id){const retry=state.callRetries.get(id);if(retry){clearTimeout(retry);state.callRetries.delete(id);}const call=state.calls.get(id);if(call){call.close();state.calls.delete(id);}state.participants.delete(id);render();}
 function attachCall(call){if(state.calls.has(call.peer))return;state.calls.set(call.peer,call);call.on("stream",stream=>{const p=state.participants.get(call.peer)||{id:call.peer,name:"सदस्य"};p.stream=stream;state.participants.set(call.peer,p);render();});call.on("close",()=>{state.calls.delete(call.peer);const p=state.participants.get(call.peer);if(p){p.stream=null;render();}});call.on("error",err=>console.warn("Peer call",err));}
 function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!state.peer||!state.peer.open||id===state.peerId)return;try{const call=state.peer.call(id,state.localStream,{metadata:{room:state.room}});if(call){attachCall(call);call.on("error",err=>{console.warn("Peer call",err);state.calls.delete(id);if(err.type==="peer-unavailable"&&attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}});}}catch(e){console.warn("callPeer",e);if(attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}}}
-async function startMedia(){try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});}catch(videoError){console.warn("Camera unavailable; retrying audio-only",videoError);state.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});state.cameraOff=true;toast("कैमरा उपलब्ध नहीं है — आप ऑडियो से जुड़ रहे हैं।");}state.localStream.getAudioTracks().forEach(t=>t.enabled=false);return state.localStream;}
+async function startMedia(){state.localStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"}});return state.localStream;}
 function subscribeRoom(){
  const base="wakiTokiRooms/"+state.room+"/participants";
  const onCancel=error=>{console.error("Room subscription",error);toast("रूम सूची पढ़ने की अनुमति नहीं मिली। Firebase Database Rules जाँचें।");};
@@ -119,7 +116,7 @@ async function joinRoom(){
  const name="Guest-"+Math.random().toString(36).slice(2,6).toUpperCase();
  if(!incomingRoom){const u=new URL(location.href);u.searchParams.set("room",room);history.replaceState({},"",u);}
  if(placeholder){$("configModal").classList.add("show");return;}
- if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){toast("कैमरा/माइक के लिए HTTPS वेबसाइट खोलें।");return;}
+ if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){toast("कैमरे के लिए HTTPS वेबसाइट खोलें।");return;}
  state.joinBusy=true;$("joinBtn").disabled=true;$("joinBtn").textContent="कनेक्ट हो रहा है…";setConnection("Connecting…");
  try{
   state.name=name;state.room=room;
@@ -140,7 +137,7 @@ async function joinRoom(){
     state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
     $("joinCard").classList.add("hidden");$("joinBtn").hidden=true;$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
-    $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("muteBtn").disabled=false;$("pttBtn").disabled=false;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
+    $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
     setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";
    }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}
   });
@@ -151,28 +148,23 @@ async function joinRoom(){
  }catch(e){console.error(e);toast(e.message||"कनेक्ट नहीं हो सका।");if(state.localStream)state.localStream.getTracks().forEach(t=>t.stop());}
  finally{if(!state.peer||state.peer.open){state.joinBusy=false;if(!state.joined){$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}}}
 }
-function startTalk(){if(!state.joined||state.talking||state.micMuted)return;state.talking=true;state.localStream.getAudioTracks().forEach(t=>t.enabled=true);$("pttBtn").classList.add("active");updateLocalPresence({speaking:true});render();}
-function stopTalk(){if(!state.joined||!state.talking)return;state.talking=false;state.localStream.getAudioTracks().forEach(t=>t.enabled=false);$("pttBtn").classList.remove("active");updateLocalPresence({speaking:false});render();}
-function toggleMic(){if(!state.joined)return;state.micMuted=!state.micMuted;if(state.micMuted)stopTalk();$("muteBtn").classList.toggle("off",state.micMuted);$("muteBtn").querySelector("span").textContent=state.micMuted?"Muted":"Mic";if(!state.micMuted&&state.talking)startTalk();toast(state.micMuted?"माइक्रोफोन म्यूट है":"माइक्रोफोन तैयार है — बोलने के लिए दबाकर रखें");}
 function toggleCamera(){if(!state.joined)return;state.cameraOff=!state.cameraOff;state.localStream.getVideoTracks().forEach(t=>t.enabled=!state.cameraOff);$("cameraBtn").classList.toggle("off",state.cameraOff);$("cameraBtn").querySelector("span").textContent=state.cameraOff?"Camera off":"Camera";updateLocalPresence({cameraOff:state.cameraOff});render();}
 async function leaveRoom(){
- if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}stopTalk();state.joined=false;
+ if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}state.joined=false;
  state.unsubs.forEach(fn=>{try{fn();}catch(e){}});state.unsubs=[];for(const timer of state.callRetries.values())clearTimeout(timer);state.callRetries.clear();
  for(const call of state.calls.values())try{call.close();}catch(e){}state.calls.clear();
  if(state.peer){try{state.peer.destroy();}catch(e){}state.peer=null;}
  if(state.peerId&&state.db)try{await remove(participantRef(state.peerId));}catch(e){}
  if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}
- state.participants.clear();state.peerId="";state.room="";state.talking=false;state.micMuted=false;state.cameraOff=false;
+ state.participants.clear();state.peerId="";state.room="";state.cameraOff=false;
  $("joinCard").classList.remove("hidden");$("roomMeta").style.display="none";$("shareTop").disabled=true;
- ["cameraBtn","muteBtn","pttBtn","leaveBtn"].forEach(id=>$(id).disabled=true);
- ["cameraBtn","muteBtn","pttBtn"].forEach(id=>$(id).classList.remove("off","active"));
- $("cameraBtn").querySelector("span").textContent="Camera";$("muteBtn").querySelector("span").textContent="Mic";
+ ["cameraBtn","leaveBtn"].forEach(id=>$(id).disabled=true);
+ ["cameraBtn"].forEach(id=>$(id).classList.remove("off"));
+ $("cameraBtn").querySelector("span").textContent="Camera";
  setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";render();toast("आप रूम से बाहर आ गए हैं।");
 }
 async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){if(navigator.share){try{await navigator.share({title:"Waki Toki कॉल",text:"इस लिंक पर टैप करके वीडियो कॉल में जुड़ें।",url:url.toString()});}catch(err){if(err.name!=="AbortError")toast("लिंक शेयर नहीं हो सका।");}}else{window.prompt("यह Invite Link कॉपी करें:",url.toString());}}}
-$("joinBtn").addEventListener("click",joinRoom);$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("muteBtn").addEventListener("click",toggleMic);$("shareTop").addEventListener("click",invite);
-$("pttBtn").addEventListener("pointerdown",e=>{e.preventDefault();try{$("pttBtn").setPointerCapture(e.pointerId);}catch(_){}if(!state.micMuted)startTalk();});["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(ev=>$("pttBtn").addEventListener(ev,e=>{e.preventDefault();stopTalk();}));
-document.addEventListener("visibilitychange",()=>{if(document.hidden)stopTalk();});
+$("joinBtn").addEventListener("click",joinRoom);$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("shareTop").addEventListener("click",invite);
 $("closeConfig").addEventListener("click",()=>$("configModal").classList.remove("show"));
 $("readmeBtn").addEventListener("click",()=>window.open("https://github.com/malaramofficial/Waki-toki-mr#firebase-setup","_blank","noopener"));
 if(placeholder){$("stageStatus").textContent="Firebase setup required";}else{joinRoom();}
