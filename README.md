@@ -1,12 +1,12 @@
 # Waki Toki — Group Video & Push to Talk
 
-A responsive browser-based group video room with push-to-talk and an active-speaker stage.
+A responsive browser-based, video-only group calling room. The app does not request microphone access or transmit audio.
 
 ## What's included
 
 - Responsive dark video-call UI for mobile and desktop.
-- Dynamic speaker spotlight: one active speaker gets the wide focus tile; two speakers get equal tiles; three/four speakers get a balanced 2×2 layout. Other participants remain visible.
-- Hold-to-talk microphone control (muted by default), camera on/off, mute, leave and invite-link copy.
+- Responsive participant video tiles, camera on/off, leave and invite-link copy.
+- Video-only media capture (`audio: false`); no microphone permission is requested and no audio is transmitted.
 - Firebase Realtime Database presence and room membership.
 - WebRTC media calls through PeerJS. Only participants listed in the same Firebase room are considered; the app does not call arbitrary PeerJS peers.
 - Anonymous Firebase Authentication; no user password or phone number is collected.
@@ -56,9 +56,9 @@ These starter rules let authenticated anonymous users read room presence and cre
 - Media uses a peer-to-peer mesh. Every participant sends a separate stream to each other participant, so bandwidth and CPU use rise quickly. Keep test rooms small (about 2–4 people) until a proper SFU such as LiveKit is integrated. Failed initial peer connections are retried a few times, but this is not a substitute for a TURN server or an SFU.
 - Some mobile networks and restrictive NAT/firewalls require a TURN relay. Add a trusted TURN service for reliable production connectivity.
 - Firebase room reads are available to any authenticated user under these simple rules. For private production rooms, add room access tokens/invitations, stronger validation, rate limits and abuse controls.
-- If camera permission is denied or the camera is unavailable, the app attempts to join audio-only (if microphone permission is granted).
-- The page currently supports video and push-to-talk. It does not yet include chat, call recording, screen sharing, end-to-end encryption, or native push notifications.
+- Camera permission is required to join a video call. If camera permission is denied or the camera is unavailable, joining fails; microphone access is never requested.
+- The page currently supports video-only calls. It does not include microphone/audio, chat, call recording, screen sharing, end-to-end encryption, or native push notifications.
 
 ## Technology
 
-HTML · CSS · JavaScript modules · Firebase Authentication · Firebase Realtime Database · PeerJS / WebRTC
+HTML · CSS · JavaScript modules · Firebase Authentication · Firebase Realtime Database · PeerJS / WebRTC (video-only)
