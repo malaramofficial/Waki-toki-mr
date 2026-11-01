@@ -134,7 +134,7 @@ async function joinRoom(){
     subscribeRoom();
     const existing=await new Promise((resolve,reject)=>onValue(ref(state.db,"wakiTokiRooms/"+room+"/participants"),snap=>{resolve(snap.val()||{});},error=>reject(error),{onlyOnce:true}));
     if(Object.keys(existing).length>=12){throw new Error("इस रूम में अधिकतम 12 सदस्य जुड़ सकते हैं।");}
-    const record={id,name,uid:state.uid,speaking:false,cameraOff:false,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};
+    const record={id,name,uid:state.uid,speaking:false,cameraOff:state.cameraOff,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};
     await onDisconnect(participantRef(id)).remove();
     await set(participantRef(id),record);
     state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
@@ -169,7 +169,7 @@ async function leaveRoom(){
  $("cameraBtn").querySelector("span").textContent="Camera";$("muteBtn").querySelector("span").textContent="Mic";
  setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";render();toast("आप रूम से बाहर आ गए हैं।");
 }
-async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){$("roomInput").value=state.room;toast("रूम कोड: "+state.room);}}
+async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){if(navigator.share){try{await navigator.share({title:"Waki Toki कॉल",text:"इस लिंक पर टैप करके वीडियो कॉल में जुड़ें।",url:url.toString()});}catch(err){if(err.name!=="AbortError")toast("लिंक शेयर नहीं हो सका।");}}else{window.prompt("यह Invite Link कॉपी करें:",url.toString());}}}
 $("joinBtn").addEventListener("click",joinRoom);$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("muteBtn").addEventListener("click",toggleMic);$("shareTop").addEventListener("click",invite);
 $("pttBtn").addEventListener("pointerdown",e=>{e.preventDefault();try{$("pttBtn").setPointerCapture(e.pointerId);}catch(_){}if(!state.micMuted)startTalk();});["pointerup","pointercancel","pointerleave","lostpointercapture"].forEach(ev=>$("pttBtn").addEventListener(ev,e=>{e.preventDefault();stopTalk();}));
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopTalk();});
