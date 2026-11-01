@@ -116,6 +116,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
   <div class="stage-head"><strong>LIVE ROOM</strong><span id="stageStatus">रूम में शामिल होने की प्रतीक्षा है</span></div>
   <div class="stage" id="stage" data-active="0"><div class="empty" id="emptyState"><div><div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h3>आपका कॉल रूम तैयार है</h3><p>कॉल अपने आप शुरू हो रही है। केवल कैमरे की अनुमति दें।</p></div></div></div>
   <div class="call-controls">
+   <button class="control" id="micBtn" disabled aria-label="Toggle microphone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span>Mic on</span></button>
    <button class="control" id="cameraBtn" disabled aria-label="Toggle camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Camera</span></button>
    <button class="control leave" id="leaveBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 8 6 12l4 4M6 12h12"/><path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg><span>Leave</span></button>
   </div>
@@ -128,13 +129,13 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
   </div>
   <div class="side-title">सदस्य <span class="count" id="memberCountLabel">0 online</span></div>
   <div class="member-list" id="memberList"><div class="member"><div class="member-avatar">?</div><div class="member-info"><strong>अभी कोई नहीं</strong><small>आपके जुड़ने की प्रतीक्षा</small></div></div></div>
-  <div class="notice">🔒 एक ही Invite Link खोलने वाले सभी लोग उसी वीडियो कॉल में जुड़ेंगे। इस ऐप में माइक्रोफोन का उपयोग नहीं होता।</div>
+  <div class="notice">🔒 एक ही Invite Link खोलने वाले सभी लोग उसी वीडियो कॉल में जुड़ेंगे। आपकी आवाज़ केवल कॉल में जुड़े सदस्यों तक भेजी जाएगी।</div>
  </aside>
 </main>
 <footer class="footer love-footer"><span>Waki Toki <span class="love-heart">♥</span> A little world made with love</span><span>मलाराम ❤️ पूजा के नाम — प्यार और साथ की निशानी</span></footer>
 </div>
 <div class="toast" id="toast"></div>
-<div class="camera-permission-backdrop" id="cameraPermissionModal" role="dialog" aria-modal="true" aria-labelledby="cameraPermissionTitle"><div class="camera-permission-card"><div class="camera-permission-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h2 id="cameraPermissionTitle">कैमरे की अनुमति ज़रूरी है</h2><p id="cameraPermissionMessage">वीडियो कॉल में शामिल होने के लिए अपने ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।</p><button class="btn" id="cameraPermissionRetry">कैमरे की अनुमति दें / दोबारा कोशिश करें</button><p class="permission-note">इस ऐप में माइक्रोफोन का उपयोग नहीं होता।</p></div></div>
+<div class="camera-permission-backdrop" id="cameraPermissionModal" role="dialog" aria-modal="true" aria-labelledby="cameraPermissionTitle"><div class="camera-permission-card"><div class="camera-permission-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></div><h2 id="cameraPermissionTitle">कैमरा और माइक्रोफोन की अनुमति ज़रूरी है</h2><p id="cameraPermissionMessage">वीडियो कॉल में शामिल होने के लिए अपने ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।</p><button class="btn" id="cameraPermissionRetry">कैमरा + माइक्रोफोन अनुमति दें / दोबारा कोशिश करें</button><p class="permission-note">अब वीडियो और वॉइस कॉल दोनों उपलब्ध हैं।</p></div></div>
 <div class="modal-backdrop" id="configModal"><div class="modal"><h2>एक बार Firebase सेटअप जरूरी है</h2><p>इस ऐप के रूम और लाइव सदस्य सूची को चलाने के लिए Firebase Realtime Database कॉन्फ़िगरेशन चाहिए। <b>firebaseConfig</b> में अपने Firebase Web App की जानकारी डालें और Anonymous Authentication तथा Realtime Database चालू करें। सेटअप निर्देश README में दिए गए हैं।</p><div class="modal-actions"><button class="btn secondary" id="closeConfig">समझ गया</button><button class="btn" id="readmeBtn">README खोलें ↗</button></div></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script type="module">
@@ -155,7 +156,7 @@ const firebaseConfig = {
 };
 
 const $ = id => document.getElementById(id);
-const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),callRetries:new Map(),unsubs:[],joined:false,cameraOff:false,joinBusy:false,joinTimeout:null};
+const state = {app:null,auth:null,db:null,peer:null,localStream:null,room:"",peerId:"",uid:"",name:"",participants:new Map(),calls:new Map(),callRetries:new Map(),unsubs:[],joined:false,cameraOff:false,micOff:false,joinBusy:false,joinTimeout:null};
 const placeholder = Object.values(firebaseConfig).some(v => String(v).startsWith("YOUR_"));
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),3200);}
 function setConnection(text,live=false){$("connectionLabel").textContent=text;$("connectionDot").classList.toggle("live",live);}
@@ -190,9 +191,9 @@ function attachCall(call){if(state.calls.has(call.peer))return;state.calls.set(c
 function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!state.peer||!state.peer.open||id===state.peerId)return;try{const call=state.peer.call(id,state.localStream,{metadata:{room:state.room}});if(call){attachCall(call);call.on("error",err=>{console.warn("Peer call",err);state.calls.delete(id);if(err.type==="peer-unavailable"&&attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}});}}catch(e){console.warn("callPeer",e);if(attempt<4&&!state.callRetries.has(id)){const timer=setTimeout(()=>{state.callRetries.delete(id);callPeer(id,attempt+1);},1200+attempt*900);state.callRetries.set(id,timer);}}}
 async function startMedia(){
  $("cameraPermissionModal").classList.remove("hidden");
- $("cameraPermissionMessage").textContent="वीडियो कॉल में शामिल होने के लिए ब्राउज़र में कैमरा अनुमति दें। अनुमति मिलने तक यह संदेश स्क्रीन पर रहेगा।";
- try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16},facingMode:{ideal:"user"}}});$("cameraPermissionModal").classList.add("hidden");return state.localStream;}
- catch(error){$("cameraPermissionModal").classList.remove("hidden");$("cameraPermissionMessage").textContent=error.name==="NotAllowedError"?"कैमरे की अनुमति अभी नहीं मिली है। ब्राउज़र के अनुमति पॉप-अप में Allow चुनें। यदि आपने Block किया है, तो साइट सेटिंग्स में Camera को Allow करके नीचे दोबारा कोशिश करें।":"कैमरा उपलब्ध नहीं है या अनुमति नहीं मिली। कैमरा चालू करें और नीचे दोबारा कोशिश करें।";throw error;}
+ $("cameraPermissionMessage").textContent="वीडियो और वॉइस कॉल के लिए कैमरा तथा माइक्रोफोन दोनों की अनुमति दें। ब्राउज़र के पॉप-अप में Allow चुनें।";
+ try{state.localStream=await navigator.mediaDevices.getUserMedia({audio:false,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:{width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16},facingMode:{ideal:"user"}}});$("cameraPermissionModal").classList.add("hidden");return state.localStream;}
+ catch(error){$("cameraPermissionModal").classList.remove("hidden");$("cameraPermissionMessage").textContent=error.name==="NotAllowedError"?"कैमरा या माइक्रोफोन की अनुमति नहीं मिली। ब्राउज़र में दोनों अनुमतियाँ Allow करें; साइट सेटिंग्स में Camera और Microphone जाँचकर दोबारा कोशिश करें।":"कैमरा या माइक्रोफोन उपलब्ध नहीं है। दोनों चालू करें और दोबारा कोशिश करें।";throw error;}
 }
 function subscribeRoom(){
  const base="wakiTokiRooms/"+state.room+"/participants";
@@ -229,7 +230,7 @@ async function joinRoom(){
     state.participants.set(id,{...record,stream:state.localStream});state.joined=true;if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}
     Object.entries(existing).forEach(([otherId,p])=>{if(otherId!==id&&p)addRemote(otherId,p);});
     $("joinCard").classList.add("hidden");$("joinBtn").hidden=true;$("roomMeta").style.display="flex";$("roomCodeLabel").textContent=room;
-    $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
+    $("shareTop").disabled=false;$("cameraBtn").disabled=state.localStream.getVideoTracks().length===0;$("micBtn").disabled=state.localStream.getAudioTracks().length===0;$("leaveBtn").disabled=false;if(state.cameraOff){$("cameraBtn").classList.add("off");$("cameraBtn").querySelector("span").textContent="Camera off";}
     setConnection("Connected",true);render();toast("रूम में सफलतापूर्वक जुड़ गए!");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";
    }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके।");await leaveRoom();state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}
   });
@@ -240,6 +241,7 @@ async function joinRoom(){
  }catch(e){console.error(e);toast(e.message||"कनेक्ट नहीं हो सका।");if(state.localStream)state.localStream.getTracks().forEach(t=>t.stop());}
  finally{if(!state.peer||state.peer.open){state.joinBusy=false;if(!state.joined){$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";}}}
 }
+function toggleMic(){if(!state.joined||!state.localStream)return;state.micOff=!state.micOff;state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.micOff);$("micBtn").classList.toggle("off",state.micOff);$("micBtn").querySelector("span").textContent=state.micOff?"Mic off":"Mic on";updateLocalPresence({micOff:state.micOff});toast(state.micOff?"माइक्रोफोन बंद":"माइक्रोफोन चालू");}
 function toggleCamera(){if(!state.joined)return;state.cameraOff=!state.cameraOff;state.localStream.getVideoTracks().forEach(t=>t.enabled=!state.cameraOff);$("cameraBtn").classList.toggle("off",state.cameraOff);$("cameraBtn").querySelector("span").textContent=state.cameraOff?"Camera off":"Camera";updateLocalPresence({cameraOff:state.cameraOff});render();}
 async function leaveRoom(){
  if(state.joinTimeout){clearTimeout(state.joinTimeout);state.joinTimeout=null;}state.joined=false;
@@ -250,13 +252,13 @@ async function leaveRoom(){
  if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}
  state.participants.clear();state.peerId="";state.room="";state.cameraOff=false;
  $("joinCard").classList.remove("hidden");$("roomMeta").style.display="none";$("shareTop").disabled=true;
- ["cameraBtn","leaveBtn"].forEach(id=>$(id).disabled=true);
+ ["cameraBtn","micBtn","leaveBtn"].forEach(id=>$(id).disabled=true);$("micBtn").classList.remove("off");$("micBtn").querySelector("span").textContent="Mic on";
  ["cameraBtn"].forEach(id=>$(id).classList.remove("off"));
  $("cameraBtn").querySelector("span").textContent="Camera";
  setConnection("Not connected");state.joinBusy=false;$("joinBtn").disabled=false;$("joinBtn").hidden=false;$("joinBtn").textContent="फिर से कोशिश करें ↻";render();toast("आप रूम से बाहर आ गए हैं।");
 }
 async function invite(){if(!state.room)return;const url=new URL(location.href);url.searchParams.set("room",state.room);try{await navigator.clipboard.writeText(url.toString());toast("रूम का लिंक कॉपी हो गया!");}catch(e){if(navigator.share){try{await navigator.share({title:"Waki Toki ❤️ Mala & Pooja",text:"मलाराम और पूजा की खास वीडियो कॉल में जुड़ें ❤️",url:url.toString()});}catch(err){if(err.name!=="AbortError")toast("लिंक शेयर नहीं हो सका।");}}else{window.prompt("यह Invite Link कॉपी करें:",url.toString());}}}
-$("joinBtn").addEventListener("click",joinRoom);$("cameraPermissionRetry").addEventListener("click",()=>{if(!state.joined){joinRoom();}});$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("shareTop").addEventListener("click",invite);
+$("joinBtn").addEventListener("click",joinRoom);$("micBtn").addEventListener("click",toggleMic);$("cameraPermissionRetry").addEventListener("click",()=>{if(!state.joined){joinRoom();}});$("leaveBtn").addEventListener("click",leaveRoom);$("cameraBtn").addEventListener("click",toggleCamera);$("shareTop").addEventListener("click",invite);
 $("closeConfig").addEventListener("click",()=>$("configModal").classList.remove("show"));
 $("readmeBtn").addEventListener("click",()=>window.open("https://github.com/malaramofficial/Waki-toki-mr#firebase-setup","_blank","noopener"));
 if(placeholder){$("stageStatus").textContent="Firebase setup required";}else{joinRoom();}
