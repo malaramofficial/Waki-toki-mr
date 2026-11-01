@@ -347,6 +347,17 @@
             margin-bottom: 4px;
         }
 
+        .speaker-box {
+            border: 1px solid rgba(94, 234, 212, 0.24);
+            background: rgba(94, 234, 212, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-top: 10px;
+            color: var(--text);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
         @media (max-width: 840px) {
             .app-shell { grid-template-columns: 1fr; }
             .controls { grid-template-columns: 1fr; }
@@ -416,14 +427,14 @@
             <div class="info-card">
                 <h3>Connected devices</h3>
                 <div id="peerList" class="peer-list">
-                    <div class="peer-item"><span class="label">Your ID</span><div id="myPeerIdText">Not connected</div></div>
+                    <div class="peer-item"><span class="label">Your Device ID</span><div id="myPeerIdText">Not connected</div></div>
                 </div>
             </div>
 
             <div class="info-card">
-                <h3>How it works</h3>
-                <p>Hold the button on the device that is speaking. The other device listens automatically and does not have to press any button.</p>
-                <div class="tiny" id="roomLinkText">Room link: not created yet</div>
+                <h3>Active speaker</h3>
+                <div id="speakerStatus" class="speaker-box">No one speaking right now</div>
+                <div class="tiny" id="roomLinkText" style="margin-top:14px;">Room link: not created yet</div>
             </div>
         </aside>
     </div>
@@ -439,6 +450,7 @@
         const statusText = document.getElementById('statusText');
         const signalLabel = document.getElementById('signalLabel');
         const roomLinkText = document.getElementById('roomLinkText');
+        const speakerStatus = document.getElementById('speakerStatus');
         const peerListDiv = document.getElementById('peerList');
         const myPeerIdText = document.getElementById('myPeerIdText');
         const meterBars = [...document.querySelectorAll('.bar')];
@@ -451,7 +463,9 @@
         let audioContext = null;
         let analyser = null;
         let animationId = null;
-        let activePeerIds = [];
+        let activeSpeakerId = null;
+        let roomPeerIds = [];
+        let localIsTalking = false;
 
         const defaultRoom = 'waki-team-demo';
 
@@ -476,15 +490,23 @@
             roomLinkText.textContent = `Room link: ${buildRoomLink()}`;
         }
 
+        function updateSpeakerStatusUI() {
+            if (!activeSpeakerId) {
+                speakerStatus.textContent = 'No one speaking right now';
+                return;
+            }
+            speakerStatus.textContent = `Speaking now: ${activeSpeakerId}`;
+        }
+
         function renderPeerList() {
             peerListDiv.innerHTML = '';
 
             const myItem = document.createElement('div');
             myItem.className = 'peer-item';
-            myItem.innerHTML = `<span class="label">Your ID</span><div>${peer ? peer.id : 'Not connected'}</div>`;
+            myItem.innerHTML = `<span class="label">Your Device ID</span><div>${peer ? peer.id : 'Not connected'}</div>`;
             peerListDiv.appendChild(myItem);
 
-            if (activePeerIds.length === 0) {
+            if (roomPeerIds.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'peer-item';
                 empty.innerHTML = '<span class="label">Connected devices</span><div>No devices connected yet</div>';
@@ -497,7 +519,7 @@
             connectedTitle.innerHTML = '<span class="label">Connected devices</span>';
             peerListDiv.appendChild(connectedTitle);
 
-            activePeerIds.forEach((id) => {
+            roomPeerIds.forEach((id) => {
                 const item = document.createElement('div');
                 item.className = 'peer-item';
                 item.textContent = id;
@@ -506,15 +528,13 @@
         }
 
         function addPeerId(id) {
-            if (!id) return;
-            if (!activePeerIds.includes(id)) {
-                activePeerIds.push(id);
-                renderPeerList();
-            }
+            if (!id || roomPeerIds.includes(id)) return;
+            roomPeerIds.push(id);
+            renderPeerList();
         }
 
         function removePeerId(id) {
-            activePeerIds = activePeerIds.filter((peerId) => peerId !== id);
+            roomPeerIds = roomPeerIds.filter((peerId) => peerId !== id);
             renderPeerList();
         }
 
@@ -559,6 +579,29 @@
             muteBtn.textContent = enabled ? 'Mute mic' : 'Unmute mic';
         }
 
+        function sendSpeakerState(speaking) {
+            if (!conn || !conn.open) return;
+            conn.send({
+                type: 'speaker-state',
+                peerId: peer.id,
+                speaking: speaking
+            });
+        }
+
+        function handleSpeakerState(data) {
+            if (!data || data.type !== 'speaker-state') return;
+
+            if (data.speaking) {
+                activeSpeakerId = data.peerId;
+                signalLabel.textContent = 'Speaking';
+            } else if (activeSpeakerId === data.peerId) {
+                activeSpeakerId = null;
+                signalLabel.textContent = 'Listening';
+            }
+
+            updateSpeakerStatusUI();
+        }
+
         function initializeRoomAsHost(roomId) {
             peer = new Peer(roomId);
             registerPeerHandlers();
@@ -566,12 +609,9 @@
             peer.on('open', () => {
                 setStatus('Room created — waiting for peer', false);
                 signalLabel.textContent = 'Host ready';
-                pttBtn.disabled = true;
+                myPeerIdText.textContent = peer.id;
                 renderPeerList();
-
-                const url = new URL(window.location.href);
-                url.searchParams.set('room', roomId);
-                window.history.replaceState({}, '', url);
+                addPeerId(peer.id);
                 updateRoomLinkText();
             });
         }
@@ -583,6 +623,9 @@
             peer.on('open', () => {
                 setStatus('Joining room...', false);
                 signalLabel.textContent = 'Connecting';
+                myPeerIdText.textContent = peer.id;
+                renderPeerList();
+                addPeerId(peer.id);
                 conn = peer.connect(roomId);
                 setupConnection();
             });
@@ -623,10 +666,11 @@
             conn.on('open', () => {
                 isConnected = true;
                 setStatus('Room connected', true);
-                signalLabel.textContent = 'Live';
+                signalLabel.textContent = 'Listening';
                 pttBtn.disabled = false;
                 setMicEnabled(false);
                 addPeerId(conn.peer);
+                updateSpeakerStatusUI();
 
                 try {
                     const call = peer.call(conn.peer, localStream);
@@ -637,6 +681,10 @@
                 } catch (error) {
                     console.log('Call setup error:', error);
                 }
+            });
+
+            conn.on('data', (data) => {
+                handleSpeakerState(data);
             });
 
             conn.on('close', () => {
@@ -684,10 +732,14 @@
             const track = localStream.getAudioTracks()[0];
             if (!track) return;
 
+            localIsTalking = true;
             track.enabled = true;
             pttBtn.classList.add('active');
             pttBtn.textContent = 'Talking...';
-            signalLabel.textContent = 'Transmitting';
+            signalLabel.textContent = 'You are speaking';
+            activeSpeakerId = peer.id;
+            sendSpeakerState(true);
+            updateSpeakerStatusUI();
         }
 
         function stopTalk() {
@@ -695,10 +747,16 @@
             const track = localStream.getAudioTracks()[0];
             if (!track) return;
 
+            localIsTalking = false;
             track.enabled = false;
             pttBtn.classList.remove('active');
             pttBtn.textContent = 'Hold to Talk';
-            signalLabel.textContent = isConnected ? 'Live' : 'Standby';
+            signalLabel.textContent = isConnected ? 'Listening' : 'Standby';
+            if (activeSpeakerId === peer.id) {
+                activeSpeakerId = null;
+                sendSpeakerState(false);
+            }
+            updateSpeakerStatusUI();
         }
 
         joinBtn.addEventListener('click', connectRoom);
@@ -728,7 +786,7 @@
             track.enabled = nextState;
             muteBtn.textContent = nextState ? 'Mute mic' : 'Unmute mic';
             if (isConnected) {
-                signalLabel.textContent = nextState ? 'Live' : 'Muted';
+                signalLabel.textContent = nextState ? 'Listening' : 'Muted';
             }
         });
 
@@ -754,6 +812,7 @@
         hydrateRoomFromUrl();
         renderPeerList();
         updateRoomLinkText();
+        updateSpeakerStatusUI();
         renderMeter(0.08);
     </script>
 </body>
