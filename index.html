@@ -4,75 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
-<meta name="description" content="Simple private video calling">
-<title>Waki Toki</title>
+<title></title>
 <style>
-:root{color-scheme:dark;font-family:Arial, sans-serif}
-*{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;background:#000;color:#fff}
-body{overflow:hidden}
-button,input{font:inherit}
-#lobby{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:#fff;color:#111}
-.lobby-card{width:min(100%,360px);display:grid;gap:14px}
-.lobby-card h1{font-size:25px;font-weight:600;margin:0}
-.lobby-card p{margin:0;color:#666;font-size:14px;line-height:1.5}
-#roomInput{width:100%;height:50px;border:1px solid #ccc;border-radius:8px;padding:0 14px;font-size:16px;color:#111;background:#fff}
-.lobby-actions{display:grid;gap:10px}
-.lobby-actions button{height:50px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:600}
-.lobby-actions button.secondary{background:#eee;color:#111}
-#lobbyStatus{min-height:20px;color:#555;font-size:13px}
-#call{display:none;position:fixed;inset:0;background:#000;overflow:hidden}
-#remoteVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-#remotePlaceholder{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#777;font-size:14px}
-#localVideo{position:absolute;z-index:3;right:14px;top:calc(env(safe-area-inset-top) + 14px);width:clamp(104px,28vw,150px);height:clamp(150px,24vh,205px);object-fit:cover;background:#111;border-radius:12px;border:1px solid #ffffff80;transform:scaleX(-1)}
-#localVideo.rear{transform:none}
-#controls{position:absolute;z-index:5;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:clamp(18px,7vw,38px);padding:18px 18px calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(transparent,#0009)}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#000;overflow:hidden}
+#call{position:fixed;inset:0;background:#000}
+#remote{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#local{position:absolute;z-index:2;right:14px;top:calc(env(safe-area-inset-top) + 14px);width:clamp(100px,27vw,145px);height:clamp(140px,23vh,195px);object-fit:cover;background:#111;border-radius:12px;border:1px solid #ffffff66;transform:scaleX(-1)}
+#local.rear{transform:none}
+#controls{position:absolute;z-index:3;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:clamp(18px,7vw,38px);padding:18px 18px calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(transparent,#0009)}
 .control{width:62px;height:62px;border:0;border-radius:50%;display:grid;place-items:center;background:#292929;color:#fff}
-.control svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .control.off{background:#e7e7e7;color:#111}
 .control:disabled{opacity:.4}
-#status{position:absolute;z-index:4;left:16px;top:calc(env(safe-area-inset-top) + 18px);font-size:12px;color:#ddd;text-shadow:0 1px 4px #000}
-#toast{position:fixed;z-index:20;left:50%;bottom:calc(env(safe-area-inset-bottom) + 105px);transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;display:none;max-width:90vw;text-align:center}
-@media(orientation:landscape){#localVideo{width:clamp(100px,17vw,160px);height:clamp(130px,32vh,205px)}}
+.control svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(orientation:landscape){#local{width:clamp(100px,17vw,155px);height:clamp(125px,30vh,190px)}}
 </style>
 </head>
 <body>
-<section id="lobby">
- <div class="lobby-card">
-  <h1>Waki Toki</h1>
-  <p>वीडियो कॉल शुरू करने के लिए नया रूम बनाएँ या रूम कोड डालकर जुड़ें।</p>
-  <input id="roomInput" autocomplete="off" maxlength="40" placeholder="रूम कोड (खाली छोड़ें = नया रूम)">
-  <div class="lobby-actions">
-   <button id="startButton">वीडियो कॉल शुरू करें</button>
-   <button id="copyButton" class="secondary" type="button">इनवाइट लिंक कॉपी करें</button>
-  </div>
-  <div id="lobbyStatus" role="status"></div>
- </div>
-</section>
-<main id="call" aria-label="वीडियो कॉल">
- <video id="remoteVideo" autoplay playsinline></video>
- <div id="remotePlaceholder">दूसरे व्यक्ति के जुड़ने की प्रतीक्षा है…</div>
- <video id="localVideo" autoplay muted playsinline></video>
- <div id="status">कनेक्ट हो रहा है…</div>
- <nav id="controls" aria-label="कॉल कंट्रोल">
-  <button id="cameraButton" class="control" aria-label="कैमरा बंद करें" title="कैमरा">
-   <svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-  </button>
-  <button id="micButton" class="control" aria-label="माइक म्यूट करें" title="माइक">
-   <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg>
-  </button>
-  <button id="switchButton" class="control" aria-label="कैमरा बदलें" title="कैमरा बदलें">
-   <svg viewBox="0 0 24 24"><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><circle cx="12" cy="13" r="3"/></svg>
-  </button>
- </nav>
+<main id="call">
+<video id="remote" autoplay playsinline></video>
+<video id="local" autoplay muted playsinline></video>
+<nav id="controls" aria-label="कॉल कंट्रोल">
+<button id="camera" class="control" aria-label="कैमरा बंद करें">
+<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+</button>
+<button id="mic" class="control" aria-label="माइक म्यूट करें">
+<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg>
+</button>
+<button id="switch" class="control" aria-label="कैमरा बदलें">
+<svg viewBox="0 0 24 24"><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><circle cx="12" cy="13" r="3"/></svg>
+</button>
+</nav>
 </main>
-<div id="toast" role="status"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getDatabase,ref,get,set,remove,onChildAdded,onChildRemoved,onDisconnect,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 import Peer from "https://esm.sh/peerjs@1.5.4";
-
 const firebaseConfig={
  apiKey:"AIzaSyB2u8HbafSnKfmiuVd4zU3BHQMnne_"+"AGSU",
  authDomain:"voter-slip-machine.firebaseapp.com",
@@ -82,154 +49,100 @@ const firebaseConfig={
  messagingSenderId:"60425502661",
  appId:"1:60425502661:web:6852d55e54f66cab14d5ac"
 };
-const Peer=window.Peer;\nconst $=id=>document.getElementById(id);
-const state={app:null,db:null,auth:null,peer:null,room:"",peerId:"",localStream:null,remoteStream:null,call:null,remoteId:"",micOff:false,cameraOff:false,usingRear:false,joined:false,unsub:[],busy:false};
-const roomPath=()=> "wakiTokiRooms/"+state.room;
-const memberRef=id=>ref(state.db,roomPath()+"/participants/"+id);
-const cleanRoom=s=>(s||"").toLowerCase().trim().replace(/[^a-z0-9_-]/g,"-").replace(/-+/g,"-").slice(0,40);
-function toast(s){$("toast").textContent=s;$("toast").style.display="block";clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").style.display="none",2800);}
-function setStatus(s){$("status").textContent=s;}
-function setLobbyStatus(s){$("lobbyStatus").textContent=s;}
-function inviteUrl(){const u=new URL(location.href);u.searchParams.set("room",state.room);return u.toString();}
-async function copyInvite(){if(!state.room){setLobbyStatus("पहले वीडियो कॉल शुरू करके रूम बनाएँ।");return;}try{await navigator.clipboard.writeText(inviteUrl());toast("इनवाइट लिंक कॉपी हो गया");}catch(e){window.prompt("इनवाइट लिंक कॉपी करें",inviteUrl());}}
-async function getPortraitStream(facing){
- const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
- const exact={audio,video:{facingMode:{exact:facing},width:{ideal:720},height:{ideal:1280},aspectRatio:{exact:9/16}}};
- try{return await navigator.mediaDevices.getUserMedia(exact);}
- catch(firstError){
-  console.warn("Exact 9:16 camera mode unavailable; trying preferred portrait mode",firstError);
-  try{return await navigator.mediaDevices.getUserMedia({audio,video:{facingMode:{ideal:facing},width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16}}});}
-  catch(secondError){
-   if(firstError.name==="NotAllowedError"||secondError.name==="NotAllowedError")throw secondError;
-   // If the device cannot expose a portrait sensor mode, keep camera capture working
-   // and report the actual dimensions rather than rotating/faking the video.
-   return await navigator.mediaDevices.getUserMedia({audio,video:{facingMode:{ideal:facing},width:{ideal:720},height:{ideal:1280}}});
-  }
- }
-}
-function logTrack(track,label){
- if(!track)return;
- console.info("[Waki Toki] "+label,{settings:track.getSettings?.(),capabilities:track.getCapabilities?.(),readyState:track.readyState});
-}
-function showLocal(){if(state.localStream){$("localVideo").srcObject=state.localStream;$("localVideo").classList.toggle("rear",state.usingRear);$("localVideo").play().catch(()=>{});}}
-function showRemote(stream){state.remoteStream=stream;$("remoteVideo").srcObject=stream;$("remotePlaceholder").style.display="none";$("remoteVideo").play().catch(()=>toast("वीडियो चलाने के लिए स्क्रीन पर टैप करें।"));setStatus("कॉल कनेक्ट है");}
-function attachCall(call){
+const $=id=>document.getElementById(id);
+const state={db:null,peer:null,room:"",id:"",stream:null,call:null,remoteId:"",cameraOff:false,micOff:false,rear:false,unsubs:[]};
+const roomRef=()=>ref(state.db,"wakiTokiRooms/"+state.room);
+const peopleRef=()=>ref(state.db,"wakiTokiRooms/"+state.room+"/participants");
+const personRef=id=>ref(state.db,"wakiTokiRooms/"+state.room+"/participants/"+id);
+function showRemote(stream){$("remote").srcObject=stream;$("remote").play().catch(()=>{});}
+function connectCall(call){
  if(state.call&&state.call!==call){call.close();return;}
  state.call=call;state.remoteId=call.peer;
  call.on("stream",showRemote);
- call.on("close",()=>{if(state.call===call){state.call=null;state.remoteStream=null;$("remoteVideo").srcObject=null;$("remotePlaceholder").style.display="grid";setStatus("कॉल डिस्कनेक्ट हो गई");}});
- call.on("error",e=>{console.error("Media call",e);setStatus("कनेक्शन में समस्या");});
+ call.on("close",()=>{if(state.call===call){state.call=null;state.remoteId="";$("remote").srcObject=null;}});
+ call.on("error",e=>console.error("call",e));
 }
 function dial(id){
- if(!state.peer||!state.peer.open||!state.localStream||id===state.peerId||state.call||state.remoteId)return;
+ if(!state.peer||!state.stream||state.call||state.remoteId||id===state.id||state.id<id)return;
  state.remoteId=id;
- try{const call=state.peer.call(id,state.localStream,{metadata:{room:state.room}});if(call)attachCall(call);}
- catch(e){state.remoteId="";console.error("dial",e);}
+ const c=state.peer.call(id,state.stream,{metadata:{room:state.room}});
+ if(c)connectCall(c);else state.remoteId="";
 }
-async function join(){
- if(state.busy||state.joined)return;
- state.busy=true;$("startButton").disabled=true;setLobbyStatus("कैमरा और माइक्रोफोन शुरू हो रहे हैं…");
+async function start(){
  try{
-  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new Error("वीडियो कॉल के लिए HTTPS वेबसाइट खोलें।");
-  state.room=cleanRoom($("roomInput").value||new URLSearchParams(location.search).get("room"));
-  if(!state.room)state.room="room-"+crypto.randomUUID().replaceAll("-","").slice(0,12);
-  $("roomInput").value=state.room;
-  state.app=initializeApp(firebaseConfig);state.auth=getAuth(state.app);state.db=getDatabase(state.app);
-  await signInAnonymously(state.auth);
-  state.localStream=await getPortraitStream("user");
-  logTrack(state.localStream.getVideoTracks()[0],"local camera");
-  showLocal();
-  state.peer=new Peer(undefined,{debug:1});
+  if(!isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error("HTTPS पर खोलें");
+  const params=new URLSearchParams(location.search);
+  state.room=(params.get("room")||("c"+crypto.randomUUID().replaceAll("-",""))).toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,40);
+  if(!params.get("room")){const u=new URL(location.href);u.searchParams.set("room",state.room);history.replaceState({call:true},"",u);}
+  const app=initializeApp(firebaseConfig);const auth=getAuth(app);state.db=getDatabase(app);
+  await signInAnonymously(auth);
+  const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+  try{state.stream=await navigator.mediaDevices.getUserMedia({audio,video:{facingMode:{ideal:"user"},width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16}}});}
+  catch(e){state.stream=await navigator.mediaDevices.getUserMedia({audio,video:{facingMode:{ideal:"user"}}});}
+  $("local").srcObject=state.stream;$("local").play().catch(()=>{});
+  state.peer=new Peer(undefined,{debug:0});
   state.peer.on("open",async id=>{
-   try{
-    state.peerId=id;
-    const modeRef=ref(state.db,roomPath()+"/mode");
-    const roomMode=await runTransaction(modeRef,current=>current||"video");
-    if(roomMode.snapshot.val()!=="video")throw new Error("यह रूम वीडियो कॉल के लिए उपलब्ध नहीं है।");
-    const existingRef=ref(state.db,roomPath()+"/participants");
-    const existing=await new Promise((resolve,reject)=>{
-     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js").then(({get})=>get(existingRef).then(s=>resolve(s.val()||{}),reject));
-    });
-    if(Object.keys(existing).length>=2&&!existing[id])throw new Error("यह साधारण वीडियो रूम केवल दो लोगों के लिए है।");
-    await onDisconnect(memberRef(id)).remove();
-    await set(memberRef(id),{id,joinedAt:Date.now(),cameraOff:false,micOff:false});
-    state.unsub.push(onChildAdded(existingRef,snap=>{if(snap.key!==state.peerId&&snap.val())dial(snap.key);}));
-    state.unsub.push(onChildRemoved(existingRef,snap=>{if(snap.key===state.remoteId){state.call?.close();state.call=null;state.remoteId="";state.remoteStream=null;$("remoteVideo").srcObject=null;$("remotePlaceholder").style.display="grid";setStatus("दूसरे व्यक्ति के जुड़ने की प्रतीक्षा है…");}}));
-    Object.keys(existing).forEach(other=>{if(other!==id)dial(other);});
-    state.joined=true;
-    $("lobby").style.display="none";$("call").style.display="block";
-    setStatus("दूसरे व्यक्ति के जुड़ने की प्रतीक्षा है…");
-    history.pushState({call:true},"",inviteUrl());
-    try{await navigator.clipboard.writeText(inviteUrl());toast("इनवाइट लिंक कॉपी हो गया — दूसरे व्यक्ति को भेजें");}catch(e){toast("कॉल शुरू हो गई — इनवाइट लिंक साझा करें");}
-   }catch(e){console.error(e);toast(e.message||"रूम में शामिल नहीं हो सके");await leave(false);}
+   state.id=id;
+   const transaction=await runTransaction(peopleRef(),people=>{
+    people=people||{};
+    if(Object.keys(people).length>=2&&!people[id])return;
+    people[id]={id,joinedAt:Date.now()};
+    return people;
+   });
+   if(!transaction.committed)throw Error("इस कॉल में पहले से दो लोग जुड़े हैं");
+   await onDisconnect(personRef(id)).remove();
+   const initial=transaction.snapshot.val()||{};
+   Object.keys(initial).forEach(other=>dial(other));
+   state.unsubs.push(onChildAdded(peopleRef(),s=>{if(s.key!==state.id)dial(s.key);}));
+   state.unsubs.push(onChildRemoved(peopleRef(),s=>{
+    if(s.key===state.remoteId){state.call?.close();state.call=null;state.remoteId="";$("remote").srcObject=null;}
+   }));
   });
   state.peer.on("call",call=>{
-   if(call.metadata?.room!==state.room){call.close();return;}
-   if(state.call&&state.call!==call){call.close();return;}
-   call.answer(state.localStream);attachCall(call);
+   if(call.metadata?.room!==state.room||state.call){call.close();return;}
+   call.answer(state.stream);connectCall(call);
   });
-  state.peer.on("error",e=>{console.error("Peer",e);if(e.type!=="peer-unavailable")toast("कनेक्शन समस्या: "+e.type);});
+  state.peer.on("error",e=>console.error("peer",e));
   state.peer.on("disconnected",()=>{if(state.peer&&!state.peer.destroyed)state.peer.reconnect();});
- }catch(e){console.error(e);toast(e.message||"कॉल शुरू नहीं हो सकी");if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}setLobbyStatus(e.message||"कैमरा अनुमति जाँचें");}
- finally{state.busy=false;$("startButton").disabled=false;}
+ }catch(e){console.error(e);document.body.innerHTML="";alert("कॉल शुरू नहीं हो सकी। कैमरा/माइक की अनुमति दें और HTTPS लिंक खोलें।");}
 }
-async function leave(goLobby=true){
- state.joined=false;
- state.unsub.forEach(fn=>{try{fn();}catch(e){}});state.unsub=[];
- try{state.call?.close();}catch(e){}state.call=null;state.remoteId="";
- if(state.peer){try{state.peer.destroy();}catch(e){}state.peer=null;}
- if(state.peerId&&state.db){try{await remove(memberRef(state.peerId));}catch(e){}}
- if(state.localStream){state.localStream.getTracks().forEach(t=>t.stop());state.localStream=null;}
- $("localVideo").srcObject=null;$("remoteVideo").srcObject=null;$("remotePlaceholder").style.display="grid";
- state.peerId="";state.remoteStream=null;state.micOff=false;state.cameraOff=false;state.usingRear=false;
- if(goLobby){$("call").style.display="none";$("lobby").style.display="flex";history.replaceState({},"",location.pathname);setLobbyStatus("कॉल समाप्त हो गई।");}
-}
-async function toggleCamera(){
- if(!state.localStream)return;
+$("camera").addEventListener("click",()=>{
  state.cameraOff=!state.cameraOff;
- state.localStream.getVideoTracks().forEach(t=>t.enabled=!state.cameraOff);
- $("cameraButton").classList.toggle("off",state.cameraOff);
- $("cameraButton").setAttribute("aria-label",state.cameraOff?"कैमरा चालू करें":"कैमरा बंद करें");
-}
-function toggleMic(){
- if(!state.localStream)return;
+ state.stream?.getVideoTracks().forEach(t=>t.enabled=!state.cameraOff);
+ $("camera").classList.toggle("off",state.cameraOff);
+ $("camera").setAttribute("aria-label",state.cameraOff?"कैमरा चालू करें":"कैमरा बंद करें");
+});
+$("mic").addEventListener("click",()=>{
  state.micOff=!state.micOff;
- state.localStream.getAudioTracks().forEach(t=>t.enabled=!state.micOff);
- $("micButton").classList.toggle("off",state.micOff);
- $("micButton").setAttribute("aria-label",state.micOff?"माइक अनम्यूट करें":"माइक म्यूट करें");
-}
-async function switchCamera(){
- if(!state.localStream||!state.peer)return;
- $("switchButton").disabled=true;
- const nextFacing=state.usingRear?"user":"environment";
+ state.stream?.getAudioTracks().forEach(t=>t.enabled=!state.micOff);
+ $("mic").classList.toggle("off",state.micOff);
+ $("mic").setAttribute("aria-label",state.micOff?"माइक अनम्यूट करें":"माइक म्यूट करें");
+});
+$("switch").addEventListener("click",async()=>{
+ if(!state.stream)return;
+ $("switch").disabled=true;
+ let replacement;
  try{
-  const replacement=await getPortraitStream(nextFacing);
-  const newVideo=replacement.getVideoTracks()[0];
-  const oldVideo=state.localStream.getVideoTracks()[0];
-  logTrack(newVideo,"switched camera");
-  for(const call of [state.call]){
-   const sender=call?.peerConnection?.getSenders?.().find(s=>s.track?.kind==="video");
-   if(sender)await sender.replaceTrack(newVideo);
-  }
-  if(oldVideo){oldVideo.stop();state.localStream.removeTrack(oldVideo);}
-  state.localStream.addTrack(newVideo);
-  const newAudio=replacement.getAudioTracks()[0];
-  if(newAudio){newAudio.stop();}
-  state.usingRear=!state.usingRear;
-  newVideo.enabled=!state.cameraOff;
-  showLocal();
- }catch(e){console.error("switch camera",e);toast("कैमरा स्विच नहीं हो सका: "+e.name);}
- finally{$("switchButton").disabled=false;}
+  replacement=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:state.rear?"user":"environment"}},audio:false});
+  const track=replacement.getVideoTracks()[0];
+  const sender=state.call?.peerConnection?.getSenders?.().find(s=>s.track?.kind==="video");
+  if(sender)await sender.replaceTrack(track);
+  const old=state.stream.getVideoTracks()[0];if(old){old.stop();state.stream.removeTrack(old);}
+  state.stream.addTrack(track);track.enabled=!state.cameraOff;
+  state.rear=!state.rear;$("local").classList.toggle("rear",state.rear);
+  $("local").srcObject=state.stream;
+ }catch(e){console.error("camera switch",e);}
+ finally{$("switch").disabled=false;replacement?.getAudioTracks().forEach(t=>t.stop());}
+});
+async function cleanup(){
+ state.unsubs.forEach(fn=>{try{fn();}catch{}});
+ try{state.call?.close();}catch{}
+ try{if(state.id&&state.db)await remove(personRef(state.id));}catch{}
+ try{state.peer?.destroy();}catch{}
+ state.stream?.getTracks().forEach(t=>t.stop());
 }
-$("startButton").addEventListener("click",join);
-$("copyButton").addEventListener("click",copyInvite);
-$("cameraButton").addEventListener("click",toggleCamera);
-$("micButton").addEventListener("click",toggleMic);
-$("switchButton").addEventListener("click",switchCamera);
-window.addEventListener("popstate",()=>{if(state.joined)leave(true);});
-window.addEventListener("beforeunload",()=>{if(state.localStream)state.localStream.getTracks().forEach(t=>t.stop());});
-const incoming=new URLSearchParams(location.search).get("room");
-if(incoming){$("roomInput").value=cleanRoom(incoming);join();}
+window.addEventListener("pagehide",cleanup);
+start();
 </script>
 </body>
 </html>
