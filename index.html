@@ -70,7 +70,7 @@ button,input{font:inherit}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getDatabase,ref,set,remove,onChildAdded,onChildRemoved,onDisconnect,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+import {getDatabase,ref,get,set,remove,onChildAdded,onChildRemoved,onDisconnect,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 import Peer from "https://esm.sh/peerjs@1.5.4";
 
 const firebaseConfig={
@@ -82,7 +82,7 @@ const firebaseConfig={
  messagingSenderId:"60425502661",
  appId:"1:60425502661:web:6852d55e54f66cab14d5ac"
 };
-const $=id=>document.getElementById(id);
+const Peer=window.Peer;\nconst $=id=>document.getElementById(id);
 const state={app:null,db:null,auth:null,peer:null,room:"",peerId:"",localStream:null,remoteStream:null,call:null,remoteId:"",micOff:false,cameraOff:false,usingRear:false,joined:false,unsub:[],busy:false};
 const roomPath=()=> "wakiTokiRooms/"+state.room;
 const memberRef=id=>ref(state.db,roomPath()+"/participants/"+id);
