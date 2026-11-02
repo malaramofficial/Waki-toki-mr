@@ -221,8 +221,28 @@ function callPeer(id,attempt=0){if(state.calls.has(id)||!state.localStream||!sta
 async function startMedia(mode){
  $("cameraPermissionModal").classList.remove("hidden");const videoMode=mode==="video";$("cameraPermissionTitle").textContent=videoMode?"कैमरा और माइक्रोफोन की अनुमति ज़रूरी है":"माइक्रोफोन की अनुमति ज़रूरी है";
  $("cameraPermissionMessage").textContent=videoMode?"वीडियो कॉल के लिए कैमरा और माइक्रोफोन दोनों की अनुमति दें।":"वॉइस कॉल के लिए केवल माइक्रोफोन की अनुमति दें। कैमरा चालू नहीं होगा।";
- const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:{ideal:1},sampleRate:{ideal:48000}};const constraints=videoMode?{audio,video:{width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:9/16},facingMode:{ideal:"user"}}}:{audio,video:false};
- try{state.localStream=await navigator.mediaDevices.getUserMedia(constraints);$("cameraPermissionModal").classList.add("hidden");return state.localStream;}
+ const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:{ideal:1},sampleRate:{ideal:48000}};
+ // Ask the camera for a true 9:16 capture first. Exact aspect ratio lets the
+ // browser choose/crop a supported sensor mode instead of merely styling a tile.
+ const portraitVideo={facingMode:{ideal:"user"},width:{ideal:720},height:{ideal:1280},aspectRatio:{exact:9/16}};
+ try{
+  if(videoMode){
+   try{state.localStream=await navigator.mediaDevices.getUserMedia({audio,video:portraitVideo});}
+   catch(portraitError){
+    console.warn("Exact portrait camera mode unavailable; retrying with preferred portrait constraints.",portraitError);
+    state.localStream=await navigator.mediaDevices.getUserMedia({audio,video:{...portraitVideo,aspectRatio:{ideal:9/16}}});
+   }
+   const track=state.localStream.getVideoTracks()[0];
+   if(track){
+    try{await track.applyConstraints({aspectRatio:{exact:9/16}});}
+    catch(constraintError){console.warn("Camera could not apply exact 9:16 track constraint.",constraintError);}
+    const settings=track.getSettings?track.getSettings():{};
+    console.info("[Waki Toki] Local camera capture:",{settings,capabilities:track.getCapabilities?track.getCapabilities():null,readyState:track.readyState});
+    track.addEventListener("ended",()=>console.warn("[Waki Toki] Local camera track ended."),{once:true});
+   }
+  }else{state.localStream=await navigator.mediaDevices.getUserMedia({audio,video:false});}
+  $("cameraPermissionModal").classList.add("hidden");return state.localStream;
+ }
  catch(error){$("cameraPermissionModal").classList.remove("hidden");const denied=error.name==="NotAllowedError"||error.name==="SecurityError";$("cameraPermissionMessage").textContent=denied?(videoMode?"कैमरा या माइक्रोफोन की अनुमति नहीं मिली। ब्राउज़र साइट सेटिंग्स में दोनों Allow करें।":"माइक्रोफोन की अनुमति नहीं मिली। ब्राउज़र साइट सेटिंग्स में Microphone Allow करें।"):(error.name==="NotFoundError"?"आवश्यक माइक्रोफोन या कैमरा नहीं मिला।":"मीडिया शुरू नहीं हो सका ("+error.name+")। डिवाइस अनुमति और माइक्रोफोन उपयोग जाँचें।");throw error;}
 }
 function subscribeRoom(){
