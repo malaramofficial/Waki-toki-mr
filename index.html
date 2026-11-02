@@ -81,9 +81,10 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
 .participant{border:1px solid #b36b8d80;border-radius:20px;background:#211425;box-shadow:0 12px 30px #0004}
 .participant video{transform:none!important;-webkit-transform:none!important;direction:ltr;object-fit:contain!important;backface-visibility:visible;-webkit-backface-visibility:visible}
 .participant video.local-preview{transform:scaleX(-1)!important;-webkit-transform:scaleX(-1)!important;}
-.participant video.video-backdrop{z-index:0;object-fit:cover!important;filter:blur(18px) brightness(.58);transform:scale(1.08);-webkit-transform:scale(1.08);pointer-events:none}
-.participant video.video-backdrop.local-preview{transform:scaleX(-1) scale(1.08)!important;-webkit-transform:scaleX(-1) scale(1.08)!important}
-.participant video.video-foreground{z-index:1;object-fit:contain!important;background:transparent}
+.participant video.portrait-camera{position:absolute;left:50%;top:50%;object-fit:contain!important;background:transparent;transform:translate(-50%,-50%)!important;-webkit-transform:translate(-50%,-50%)!important}
+.participant video.portrait-camera.rotate-to-portrait{transform:translate(-50%,-50%) rotate(90deg)!important;-webkit-transform:translate(-50%,-50%) rotate(90deg)!important}
+.participant video.portrait-camera.local-preview{transform:translate(-50%,-50%) scaleX(-1)!important;-webkit-transform:translate(-50%,-50%) scaleX(-1)!important}
+.participant video.portrait-camera.rotate-to-portrait.local-preview{transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;-webkit-transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important}
 
 .participant.speaking{border-color:#ffacd0;box-shadow:0 0 0 4px #f28db522,0 18px 45px #e66b9a2b}
 .person-name{font-size:13px;text-shadow:0 2px 8px #000}
@@ -188,7 +189,7 @@ function render(){
  list.forEach(p=>{
   const card=document.createElement("div");card.className="participant"+(state.mode==="voice"?" audio-only-card":"")+(p.speaking?" speaking":"")+(p.id===state.peerId?" local-participant":"");card.dataset.peer=p.id;
   const avatar=document.createElement("div");avatar.className="avatar";const letter=document.createElement("span");letter.textContent=initials(p.name);avatar.appendChild(letter);card.appendChild(avatar);
-  if(p.stream){if(state.mode!=="voice"){const backdrop=document.createElement("video");backdrop.autoplay=true;backdrop.playsInline=true;backdrop.muted=true;backdrop.className="video-backdrop";if(p.id===state.peerId)backdrop.classList.add("local-preview");backdrop.srcObject=p.stream;card.appendChild(backdrop);backdrop.play().catch(()=>{});}const media=document.createElement(state.mode==="voice"?"audio":"video");media.autoplay=true;media.playsInline=true;media.muted=p.id===state.peerId;if(state.mode!=="voice"&&p.id===state.peerId)media.classList.add("local-preview");media.srcObject=p.stream;if(state.mode==="voice")media.style.display="none";else media.classList.add("video-foreground");card.appendChild(media);media.play().catch(()=>toast("आवाज़ चलाने के लिए स्क्रीन पर एक बार टैप करें।"));}
+  if(p.stream){const media=document.createElement(state.mode==="voice"?"audio":"video");media.autoplay=true;media.playsInline=true;media.muted=p.id===state.peerId;if(state.mode!=="voice"){media.classList.add("portrait-camera");if(p.id===state.peerId)media.classList.add("local-preview");const orient=()=>{if(!media.videoWidth||!media.videoHeight)return;const landscape=media.videoWidth>media.videoHeight;media.classList.toggle("rotate-to-portrait",landscape);const w=card.clientWidth,h=card.clientHeight;if(landscape){media.style.width=h+"px";media.style.height=w+"px";}else{media.style.width="100%";media.style.height="100%";}};media.addEventListener("loadedmetadata",orient,{once:true});if("ResizeObserver" in window){const ro=new ResizeObserver(orient);ro.observe(card);media.addEventListener("emptied",()=>ro.disconnect(),{once:true});}}media.srcObject=p.stream;if(state.mode==="voice")media.style.display="none";card.appendChild(media);media.play().catch(()=>toast("आवाज़ चलाने के लिए स्क्रीन पर एक बार टैप करें।"));}
   const shade=document.createElement("div");shade.className="shade";card.appendChild(shade);
   const name=document.createElement("div");name.className="person-name";name.textContent=p.name+(p.id===state.peerId?" (आप)":"");card.appendChild(name);
   const badge=document.createElement("div");badge.className="person-state";badge.textContent=state.mode==="voice"?"वॉइस कॉल":(p.cameraOff?"कैमरा बंद":"वीडियो ऑनलाइन");card.appendChild(badge);
