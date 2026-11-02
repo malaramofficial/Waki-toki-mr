@@ -82,9 +82,9 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
 .participant video{transform:none!important;-webkit-transform:none!important;direction:ltr;object-fit:contain!important;backface-visibility:visible;-webkit-backface-visibility:visible}
 .participant video.local-preview{transform:scaleX(-1)!important;-webkit-transform:scaleX(-1)!important;}
 .participant video.portrait-camera{position:absolute;left:50%;top:50%;object-fit:contain!important;background:transparent;transform:translate(-50%,-50%)!important;-webkit-transform:translate(-50%,-50%)!important}
-.participant video.portrait-camera.rotate-to-portrait{transform:translate(-50%,-50%) rotate(90deg)!important;-webkit-transform:translate(-50%,-50%) rotate(90deg)!important}
+.participant video.portrait-camera.rotate-to-portrait{transform:translate(-50%,-50%) rotate(-90deg)!important;-webkit-transform:translate(-50%,-50%) rotate(-90deg)!important}
 .participant video.portrait-camera.local-preview{transform:translate(-50%,-50%) scaleX(-1)!important;-webkit-transform:translate(-50%,-50%) scaleX(-1)!important}
-.participant video.portrait-camera.rotate-to-portrait.local-preview{transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;-webkit-transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important}
+.participant video.portrait-camera.rotate-to-portrait.local-preview{transform:translate(-50%,-50%) rotate(-90deg) scaleX(-1)!important;-webkit-transform:translate(-50%,-50%) rotate(-90deg) scaleX(-1)!important}
 
 .participant.speaking{border-color:#ffacd0;box-shadow:0 0 0 4px #f28db522,0 18px 45px #e66b9a2b}
 .person-name{font-size:13px;text-shadow:0 2px 8px #000}
